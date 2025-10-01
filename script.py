@@ -4,6 +4,10 @@ from io import StringIO
 import weo
 from datetime import datetime
 import json
+import os
+
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 current_year = datetime.now().year
 current_month = datetime.now().month
@@ -17,13 +21,15 @@ download_attempts = [
 ]
 
 weo_downloaded = False
+weo_filepath = os.path.join(SCRIPT_DIR, 'weo.csv')
+
 for weo_year, weo_release in download_attempts:
     try:
         print(f"Attempting to download WEO data: {weo_year} Release {weo_release}")
-        weo.download(year=weo_year, release=weo_release, filename='weo.csv')
+        weo.download(year=weo_year, release=weo_release, filename=weo_filepath)
         
         # Verify it's actually a CSV by checking first line
-        with open('weo.csv', 'r', encoding='utf-8') as f:
+        with open(weo_filepath, 'r', encoding='utf-8') as f:
             first_line = f.readline()
             if '<html>' in first_line.lower() or '<head>' in first_line.lower():
                 print(f"  ✗ Downloaded file is HTML, not CSV (redirect or error page)")
@@ -72,19 +78,19 @@ embi_countries = [country_mapping.get(country, country) for country in countries
 # Try to initialize WEO data - with error handling for column issues
 print("\nAttempting to load WEO data...")
 try:
-    w = weo.WEO("weo.csv")
+    w = weo.WEO(weo_filepath)
     print("✓ WEO data loaded successfully using weo library")
 except KeyError as e:
     print(f"⚠ WEO library encountered column issue: {e}")
     print("Inspecting CSV structure...")
     
     # Read the CSV directly to inspect
-    df_inspect = pd.read_csv("weo.csv", nrows=5, sep='\t')
+    df_inspect = pd.read_csv(weo_filepath, nrows=5, sep='\t')
     print(f"Available columns: {df_inspect.columns.tolist()}")
     
     # Try alternative approach - read the full CSV
     print("\nAttempting to read WEO CSV directly...")
-    df_weo = pd.read_csv("weo.csv", sep='\t')
+    df_weo = pd.read_csv(weo_filepath, sep='\t')
     
     # Look for country-related columns
     country_cols = [col for col in df_weo.columns if 'country' in col.lower() or 'iso' in col.lower()]
@@ -579,12 +585,13 @@ html_template = """<!DOCTYPE html>
 # Replace placeholder with actual data
 html_content = html_template.replace('COUNTRY_DATA_PLACEHOLDER', json.dumps(country_metrics_json, indent=2))
 
-# Save HTML file
-output_filename = 'index.html'
+# Save HTML file to script directory
+output_filename = os.path.join(SCRIPT_DIR, 'index.html')
 with open(output_filename, 'w', encoding='utf-8') as f:
     f.write(html_content)
 
 print(f"\n✓ HTML dashboard created: {output_filename}")
+print(f"✓ Full path: {os.path.abspath(output_filename)}")
 print(f"✓ Total countries included: {len(country_metrics_json)}")
 print("\nYou can now open 'index.html' in your web browser!")
 print("\n=== DONE ===")
