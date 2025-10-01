@@ -5,7 +5,24 @@ from weo import WEO
 from datetime import datetime
 import json
 
-weo.download(filename='weo.csv')
+import weo
+
+current_year = datetime.now().year
+current_month = datetime.now().month
+
+if current_month >= 10:
+    weo_year = current_year
+    weo_release = 2
+elif current_month >= 4:
+    weo_year = current_year
+    weo_release = 1
+else:
+    weo_year = current_year - 1
+    weo_release = 2
+
+print(f"Downloading WEO data: {weo_year} Release {weo_release}")
+weo.download(year=weo_year, release=weo_release, filename='weo.csv')
+
 w = WEO("weo.csv")
 
 # Get current year
