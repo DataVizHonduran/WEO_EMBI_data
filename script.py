@@ -61,8 +61,65 @@ country_mapping = {
 # Filter countries that exist in mapping
 embi_countries = [country_mapping.get(country, country) for country in countries if country in country_mapping]
 
-# Initialize WEO data
-w = weo.WEO("weo.csv")
+# Try to initialize WEO data - with error handling for column issues
+print("\nAttempting to load WEO data...")
+try:
+    w = weo.WEO("weo.csv")
+    print("✓ WEO data loaded successfully using weo library")
+except KeyError as e:
+    print(f"⚠ WEO library encountered column issue: {e}")
+    print("Inspecting CSV structure...")
+    
+    # Read the CSV directly to inspect
+    df_inspect = pd.read_csv("weo.csv", nrows=5, sep='\t')
+    print(f"Available columns: {df_inspect.columns.tolist()}")
+    
+    # Try alternative approach - read the full CSV
+    print("\nAttempting to read WEO CSV directly...")
+    df_weo = pd.read_csv("weo.csv", sep='\t')
+    
+    # Look for country-related columns
+    country_cols = [col for col in df_weo.columns if 'country' in col.lower() or 'iso' in col.lower()]
+    print(f"Found potential country columns: {country_cols}")
+    
+    # Create a custom WEO-like wrapper
+    class CustomWEO:
+        def __init__(self, df):
+            self.df = df
+            # Try to identify the country code column
+            self.country_col = None
+            for col in ['ISO', 'WEO Country Code', 'Country Code', 'ISO3']:
+                if col in df.columns:
+                    self.country_col = col
+                    break
+            
+            if not self.country_col:
+                raise ValueError(f"Could not identify country code column. Available columns: {df.columns.tolist()}")
+            
+            print(f"Using '{self.country_col}' as country identifier")
+        
+        def getc(self, variable_code):
+            """Get variable data by country"""
+            # Filter for the variable
+            var_data = self.df[self.df['WEO Subject Code'] == variable_code].copy()
+            
+            if var_data.empty:
+                raise ValueError(f"Variable {variable_code} not found")
+            
+            # Get year columns (they're typically numeric column names)
+            year_cols = [col for col in var_data.columns if str(col).isdigit()]
+            
+            # Set country as index
+            var_data = var_data.set_index(self.country_col)
+            
+            # Return only year columns, convert to numeric
+            result = var_data[year_cols].apply(pd.to_numeric, errors='coerce')
+            result.columns = result.columns.astype(int)
+            
+            return result.T  # Transpose so years are rows
+    
+    w = CustomWEO(df_weo)
+    print("✓ Created custom WEO wrapper")
 
 # Variable definitions
 var_dict = {
@@ -119,6 +176,7 @@ def get_year_data(series_data, target_year):
     return series_data.iloc[-1].sort_values(), "last_available"
 
 # Collect data for all three datasets
+print("\nCollecting data for variables...")
 for var in var_dict.keys():
     try:
         # Get full time series for all countries
@@ -146,10 +204,10 @@ for var in var_dict.keys():
             # Create a series with NaN values for all countries to maintain structure
             data_2019[var] = pd.Series([float('nan')] * len(embi_countries), index=embi_countries).sort_values()
         
-        print(f"Successfully collected data for {var}")
+        print(f"✓ Successfully collected data for {var}")
         
     except Exception as e:
-        print(f"Error collecting data for {var}: {e}")
+        print(f"✗ Error collecting data for {var}: {e}")
         current_year_data[var] = None
         median_10yr_data[var] = None
         data_2019[var] = None
