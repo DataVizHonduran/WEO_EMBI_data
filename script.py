@@ -586,5 +586,5 @@ with open(output_filename, 'w', encoding='utf-8') as f:
 
 print(f"\n✓ HTML dashboard created: {output_filename}")
 print(f"✓ Total countries included: {len(country_metrics_json)}")
-print("\nYou can now open 'emerging_markets_dashboard.html' in your web browser!")
+print("\nYou can now open 'index.html' in your web browser!")
 print("\n=== DONE ===")
