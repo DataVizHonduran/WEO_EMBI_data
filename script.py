@@ -31,8 +31,6 @@ except:
     print(f"Downloading WEO data: {weo_year} Release {weo_release}")
     weo.download(year=weo_year, release=weo_release, filename='weo.csv')
 
-w = weo.WEO("weo.csv")
-
 # Get current year
 current_year = datetime.now().year
 
@@ -64,7 +62,7 @@ country_mapping = {
 embi_countries = [country_mapping.get(country, country) for country in countries if country in country_mapping]
 
 # Initialize WEO data
-w = WEO("weo.csv")
+w = weo.WEO("weo.csv")
 
 # Variable definitions
 var_dict = {
@@ -471,7 +469,7 @@ html_template = """<!DOCTYPE html>
                     <button
                       key={continent}
                       onClick={() => setSelectedContinent(continent)}
-                      className={`px-4 py-2 rounded-lg font-medium transition $${
+                      className={`px-4 py-2 rounded-lg font-medium transition ${
                         selectedContinent === continent
                           ? 'bg-blue-600 text-white'
                           : 'bg-white text-gray-700 hover:bg-blue-100'
