@@ -1,13 +1,15 @@
-name: Monthly Data Update
+name: Monthly Dashboard Update
 
 on:
   schedule:
     # Runs at 00:00 UTC on the 1st of every month
     - cron: '0 0 1 * *'
   workflow_dispatch: # Allows manual triggering
+  push:
+    branches: [ main ] # Also run on push for testing
 
 jobs:
-  update-data:
+  update-dashboard:
     runs-on: ubuntu-latest
     
     steps:
@@ -21,15 +23,16 @@ jobs:
         
     - name: Install dependencies
       run: |
+        pip install --upgrade pip
         pip install -r requirements.txt
         
     - name: Run data processing script
       run: |
-        python your_script.py
+        python script.py
         
     - name: Commit and push if changes
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add -A
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Update data - $(date +'%Y-%m-%d')" && git push)
+        git add emerging_markets_dashboard.html weo.csv
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update dashboard - $(date +'%Y-%m-%d')" && git push)
