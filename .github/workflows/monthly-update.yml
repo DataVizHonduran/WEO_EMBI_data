@@ -1,5 +1,4 @@
 name: Monthly Dashboard Update
-
 on:
   schedule:
     # Runs at 00:00 UTC on the 1st of every month
@@ -7,7 +6,6 @@ on:
   workflow_dispatch: # Allows manual triggering
   push:
     branches: [ main ] # Also run on push for testing
-
 jobs:
   update-dashboard:
     runs-on: ubuntu-latest
@@ -34,5 +32,5 @@ jobs:
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add emerging_markets_dashboard.html weo.csv
+        git add index.html weo.csv
         git diff --quiet && git diff --staged --quiet || (git commit -m "Update dashboard - $(date +'%Y-%m-%d')" && git push)
