@@ -5,6 +5,9 @@ from weo import WEO
 from datetime import datetime
 import json
 
+weo.download(filename='weo.csv')
+w = WEO("weo.csv")
+
 # Get current year
 current_year = datetime.now().year
 
