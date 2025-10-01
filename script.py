@@ -8,28 +8,36 @@ import json
 current_year = datetime.now().year
 current_month = datetime.now().month
 
-if current_month >= 10:
-    weo_year = current_year
-    weo_release = 2
-elif current_month >= 4:
-    weo_year = current_year
-    weo_release = 1
-else:
-    weo_year = current_year - 1
-    weo_release = 2
+# Try multiple WEO releases in order of preference
+download_attempts = [
+    (2025, 1),  # April 2025
+    (2024, 2),  # October 2024
+    (2024, 1),  # April 2024
+    (2023, 2),  # October 2023
+]
 
-try:
-    print(f"Downloading WEO data: {weo_year} Release {weo_release}")
-    weo.download(year=weo_year, release=weo_release, filename='weo.csv')
-except:
-    print(f"Release {weo_release} for {weo_year} not available, trying previous release...")
-    if weo_release == 2:
-        weo_release = 1
-    else:
-        weo_year -= 1
-        weo_release = 2
-    print(f"Downloading WEO data: {weo_year} Release {weo_release}")
-    weo.download(year=weo_year, release=weo_release, filename='weo.csv')
+weo_downloaded = False
+for weo_year, weo_release in download_attempts:
+    try:
+        print(f"Attempting to download WEO data: {weo_year} Release {weo_release}")
+        weo.download(year=weo_year, release=weo_release, filename='weo.csv')
+        
+        # Verify it's actually a CSV by checking first line
+        with open('weo.csv', 'r', encoding='utf-8') as f:
+            first_line = f.readline()
+            if '<html>' in first_line.lower() or '<head>' in first_line.lower():
+                print(f"  ✗ Downloaded file is HTML, not CSV (redirect or error page)")
+                continue
+        
+        print(f"  ✓ Successfully downloaded {weo_year} Release {weo_release}")
+        weo_downloaded = True
+        break
+    except Exception as e:
+        print(f"  ✗ Failed: {e}")
+        continue
+
+if not weo_downloaded:
+    raise RuntimeError("Could not download WEO data from any available release. Please download manually from https://www.imf.org/en/Publications/WEO/weo-database")
 
 # Get current year
 current_year = datetime.now().year
