@@ -580,7 +580,7 @@ html_template = """<!DOCTYPE html>
 html_content = html_template.replace('COUNTRY_DATA_PLACEHOLDER', json.dumps(country_metrics_json, indent=2))
 
 # Save HTML file
-output_filename = 'emerging_markets_dashboard.html'
+output_filename = 'index.html'
 with open(output_filename, 'w', encoding='utf-8') as f:
     f.write(html_content)
 
