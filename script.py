@@ -1,11 +1,9 @@
 import pandas as pd
 import requests
 from io import StringIO
-from weo import WEO
+import weo
 from datetime import datetime
 import json
-
-import weo
 
 current_year = datetime.now().year
 current_month = datetime.now().month
@@ -20,10 +18,20 @@ else:
     weo_year = current_year - 1
     weo_release = 2
 
-print(f"Downloading WEO data: {weo_year} Release {weo_release}")
-weo.download(year=weo_year, release=weo_release, filename='weo.csv')
+try:
+    print(f"Downloading WEO data: {weo_year} Release {weo_release}")
+    weo.download(year=weo_year, release=weo_release, filename='weo.csv')
+except:
+    print(f"Release {weo_release} for {weo_year} not available, trying previous release...")
+    if weo_release == 2:
+        weo_release = 1
+    else:
+        weo_year -= 1
+        weo_release = 2
+    print(f"Downloading WEO data: {weo_year} Release {weo_release}")
+    weo.download(year=weo_year, release=weo_release, filename='weo.csv')
 
-w = WEO("weo.csv")
+w = weo.WEO("weo.csv")
 
 # Get current year
 current_year = datetime.now().year
