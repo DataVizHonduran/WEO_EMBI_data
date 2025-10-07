@@ -203,7 +203,7 @@ for var in var_dict.keys():
             print(f"Current year {current_year} not found for {var}, using {used_year} instead")
         
         # 10-year median (last 10 years)
-        median_10yr = series_data.loc[current_year-9:current_year].median().sort_values()
+        median_10yr = series_data.loc[pd.Period(current_year-9, freq='A'):pd.Period(current_year, freq='A')].median().sort_values()
         median_10yr_data[var] = median_10yr
         
         # 2019 values
