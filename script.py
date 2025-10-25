@@ -14,6 +14,7 @@ current_month = datetime.now().month
 
 # Try multiple WEO releases in order of preference
 download_attempts = [
+    (2025, 2),  # October 2025
     (2025, 1),  # April 2025
     (2024, 2),  # October 2024
     (2024, 1),  # April 2024
