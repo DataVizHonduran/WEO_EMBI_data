@@ -13663,8 +13663,11 @@
 
         const ScatterView = () => {
           const [xInd, setXInd] = useState('GDP per capita (USD)');
+          const [xPeriod, setXPeriod] = useState(currentYear);
           const [yInd, setYInd] = useState('Gross debt (% of GDP)');
+          const [yPeriod, setYPeriod] = useState(currentYear);
           const [colorMode, setColorMode] = useState('rating');
+          const periods = [{key: currentYear, label: currentYear}, {key: '10yr_Median', label: '10yr Avg'}, {key: '2019', label: '2019'}];
           const [hidden, setHidden] = useState(new Set());
           const [highlightCode, setHighlightCode] = useState('');
           const [tooltip, setTooltip] = useState(null);
@@ -13686,13 +13689,13 @@
           const points = useMemo(() => allCountriesFlat
             .map(c => ({
               ...c,
-              x: countryMetrics[c.code]?.[xInd]?.[currentYear] ?? null,
-              y: countryMetrics[c.code]?.[yInd]?.[currentYear] ?? null,
+              x: countryMetrics[c.code]?.[xInd]?.[xPeriod] ?? null,
+              y: countryMetrics[c.code]?.[yInd]?.[yPeriod] ?? null,
               rating: countryRatings[c.code] ?? '',
               bucket: Object.entries(ratingGroups).find(([, codes]) => codes.includes(c.code))?.[0] ?? 'Unrated',
             }))
             .filter(c => c.x !== null && c.y !== null),
-          [xInd, yInd]);
+          [xInd, xPeriod, yInd, yPeriod]);
 
           const [xMin, xMax, yMin, yMax] = useMemo(() => {
             if (!points.length) return [0, 1, 0, 1];
@@ -13751,8 +13754,8 @@
             <div className="max-w-5xl mx-auto">
               {/* Controls */}
               <div className="bg-white rounded-xl shadow p-5 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">X Axis</label>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase">X Axis</label>
                   <select value={xInd} onChange={e => setXInd(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                     {cardGroups.map(({ heading, indicators: gi }) => (
@@ -13761,9 +13764,17 @@
                       </optgroup>
                     ))}
                   </select>
+                  <div className="flex gap-1">
+                    {periods.map(p => (
+                      <button key={p.key} onClick={() => setXPeriod(p.key)}
+                        className={`px-2 py-0.5 rounded text-xs font-medium transition ${
+                          xPeriod === p.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-blue-50'
+                        }`}>{p.label}</button>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Y Axis</label>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase">Y Axis</label>
                   <select value={yInd} onChange={e => setYInd(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                     {cardGroups.map(({ heading, indicators: gi }) => (
@@ -13772,6 +13783,14 @@
                       </optgroup>
                     ))}
                   </select>
+                  <div className="flex gap-1">
+                    {periods.map(p => (
+                      <button key={p.key} onClick={() => setYPeriod(p.key)}
+                        className={`px-2 py-0.5 rounded text-xs font-medium transition ${
+                          yPeriod === p.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-blue-50'
+                        }`}>{p.label}</button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Color by</label>
@@ -13826,9 +13845,9 @@
                       </g>
                     ))}
                     {/* Axis labels */}
-                    <text x={PAD.l + iW/2} y={VH-6} textAnchor="middle" fontSize="12" fill="#374151" fontWeight="600">{xInd}</text>
+                    <text x={PAD.l + iW/2} y={VH-6} textAnchor="middle" fontSize="12" fill="#374151" fontWeight="600">{xInd} ({xPeriod === '10yr_Median' ? '10yr Avg' : xPeriod})</text>
                     <text x={14} y={PAD.t + iH/2} textAnchor="middle" fontSize="12" fill="#374151" fontWeight="600"
-                      transform={`rotate(-90,14,${PAD.t+iH/2})`}>{yInd}</text>
+                      transform={`rotate(-90,14,${PAD.t+iH/2})`}>{yInd} ({yPeriod === '10yr_Median' ? '10yr Avg' : yPeriod})</text>
                     {/* Normal dots */}
                     {normalPts.map(p => (
                       <circle key={p.code} cx={sx(p.x)} cy={sy(p.y)} r="5"
