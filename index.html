@@ -13,7 +13,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useMemo } = React;
 
         const countryMetrics = {
   "AGO": {
@@ -2521,6 +2521,25 @@
           }
         };
 
+        const allCountriesFlat = Object.entries(countryData).flatMap(([continent, countries]) =>
+          Object.entries(countries).map(([code, name]) => ({ code, name, continent }))
+        );
+
+        const indicators = [
+          'Real GDP growth (%)',
+          'Inflation, consumer prices (%)',
+          'General government gross debt (% of GDP)',
+          'General government net lending/borrowing (% of GDP)',
+          'Current account balance (% of GDP)',
+          'GDP (US Dollars)',
+          'Population',
+          'Total investment (% of GDP)',
+          'National savings (% of GDP)',
+          'General government revenue (% of GDP)',
+          'General government total expenditure (% of GDP)',
+          'General government net borrowing (% of GDP)',
+        ];
+
         const TrendingUp = () => (
             <svg className="inline w-4 h-4 text-green-600 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -2539,6 +2558,7 @@
             </svg>
         );
 
+        // ── Country detail card ─────────────────────────────────────────────
         const CountryCard = ({ countryCode, countryName, metrics }) => {
           if (!metrics) {
             return (
@@ -2580,20 +2600,17 @@
                   <Globe className="w-16 h-16 text-blue-600" />
                 </div>
               </div>
-
               <div className="grid grid-cols-4 gap-4 mb-2 pb-2 border-b-2 border-gray-300">
                 <div className="col-span-1 font-bold text-gray-700">Indicator</div>
                 <div className="text-right font-bold text-blue-900">{currentYear}</div>
                 <div className="text-right font-bold text-gray-700">10yr Median</div>
                 <div className="text-right font-bold text-gray-700">2019</div>
               </div>
-
               <div className="space-y-0">
                 {Object.entries(metrics).map(([key, value]) => (
                   <MetricRow key={key} label={key} data={value} />
                 ))}
               </div>
-
               <div className="mt-6 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
                 Source: IMF World Economic Outlook Database · {weoReleaseLabel} WEO
               </div>
@@ -2601,7 +2618,162 @@
           );
         };
 
+        // ── Compare tab ─────────────────────────────────────────────────────
+        const CompareView = () => {
+          const [indicator, setIndicator] = useState(indicators[0]);
+          const [period, setPeriod] = useState(currentYear);
+          const [continentFilter, setContinentFilter] = useState('All');
+
+          const periods = [
+            { key: currentYear, label: currentYear },
+            { key: '10yr_Median', label: '10yr Median' },
+            { key: '2019', label: '2019' },
+          ];
+
+          const continents = ['All', ...Object.keys(countryData)];
+
+          const rows = useMemo(() => {
+            const source = continentFilter === 'All'
+              ? allCountriesFlat
+              : allCountriesFlat.filter(c => c.continent === continentFilter);
+
+            return source
+              .map(c => ({ ...c, value: countryMetrics[c.code]?.[indicator]?.[period] ?? null }))
+              .filter(c => c.value !== null)
+              .sort((a, b) => b.value - a.value);
+          }, [indicator, period, continentFilter]);
+
+          const maxAbs = useMemo(() => Math.max(...rows.map(r => Math.abs(r.value)), 1), [rows]);
+          const hasNegative = rows.some(r => r.value < 0);
+
+          return (
+            <div className="max-w-4xl mx-auto">
+              {/* Controls */}
+              <div className="bg-white rounded-xl shadow p-5 mb-6 flex flex-col gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Indicator</label>
+                  <select
+                    value={indicator}
+                    onChange={e => setIndicator(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    {indicators.map(ind => (
+                      <option key={ind} value={ind}>{ind}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Period</label>
+                    <div className="flex gap-2">
+                      {periods.map(p => (
+                        <button
+                          key={p.key}
+                          onClick={() => setPeriod(p.key)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                            period === p.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Region</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {continents.map(c => (
+                        <button
+                          key={c}
+                          onClick={() => setContinentFilter(c)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                            continentFilter === c ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chart */}
+              <div className="bg-white rounded-xl shadow p-6">
+                <p className="text-xs text-gray-400 mb-4">
+                  {rows.length} countries · sorted by value · {period === currentYear ? currentYear : period}
+                </p>
+                {rows.length === 0 && (
+                  <p className="text-center text-gray-400 py-8">No data available for this selection.</p>
+                )}
+                <div className="space-y-1.5">
+                  {rows.map(({ code, name, value, continent }) => {
+                    const absPct = Math.abs(value) / maxAbs * 100;
+                    const positive = value >= 0;
+
+                    if (hasNegative) {
+                      // Diverging chart: zero line at 50%
+                      const halfPct = absPct / 2;
+                      return (
+                        <div key={code} className="flex items-center gap-2 group">
+                          <div className="w-36 text-right text-xs text-gray-700 truncate group-hover:text-blue-700 font-medium" title={name}>
+                            {name}
+                          </div>
+                          <div className="flex-1 flex items-center h-6">
+                            <div className="w-1/2 flex justify-end">
+                              {!positive && (
+                                <div
+                                  style={{ width: `${absPct}%` }}
+                                  className="h-5 bg-red-400 rounded-l"
+                                />
+                              )}
+                            </div>
+                            <div className="w-px h-5 bg-gray-400 mx-0.5 flex-shrink-0" />
+                            <div className="w-1/2 flex justify-start">
+                              {positive && (
+                                <div
+                                  style={{ width: `${absPct}%` }}
+                                  className="h-5 bg-blue-500 rounded-r"
+                                />
+                              )}
+                            </div>
+                          </div>
+                          <div className={`w-14 text-xs font-semibold text-right ${positive ? 'text-blue-700' : 'text-red-600'}`}>
+                            {value.toFixed(1)}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={code} className="flex items-center gap-2 group">
+                        <div className="w-36 text-right text-xs text-gray-700 truncate group-hover:text-blue-700 font-medium" title={name}>
+                          {name}
+                        </div>
+                        <div className="flex-1">
+                          <div
+                            style={{ width: `${absPct}%` }}
+                            className="h-5 bg-blue-500 rounded-r"
+                          />
+                        </div>
+                        <div className="w-14 text-xs font-semibold text-right text-blue-700">
+                          {value.toFixed(1)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-6 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
+                  Source: IMF World Economic Outlook Database · {weoReleaseLabel} WEO
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // ── Root app ────────────────────────────────────────────────────────
         const App = () => {
+          const [tab, setTab] = useState('countries');
           const [selectedCountry, setSelectedCountry] = useState(null);
           const [selectedContinent, setSelectedContinent] = useState('All');
 
@@ -2638,48 +2810,68 @@
           return (
             <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 p-8">
               <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-3">
+                {/* Header */}
+                <div className="text-center mb-5">
                   <h1 className="text-4xl font-bold text-gray-800 mb-2">Emerging Markets Dashboard</h1>
-                  <p className="text-gray-600 mb-1">Select a country to view economic indicators</p>
                   <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
                     Data: IMF {weoReleaseLabel} WEO
                   </span>
                 </div>
 
-                <div className="flex justify-center gap-2 mb-8 flex-wrap mt-4">
-                  {continents.map(continent => (
+                {/* Tab switcher */}
+                <div className="flex justify-center gap-2 mb-6">
+                  {[['countries', 'Countries'], ['compare', 'Compare']].map(([key, label]) => (
                     <button
-                      key={continent}
-                      onClick={() => setSelectedContinent(continent)}
-                      className={`px-4 py-2 rounded-lg font-medium transition ${
-                        selectedContinent === continent
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-blue-100'
+                      key={key}
+                      onClick={() => setTab(key)}
+                      className={`px-6 py-2 rounded-full font-semibold text-sm transition ${
+                        tab === key ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-blue-50'
                       }`}
                     >
-                      {continent}
+                      {label}
                     </button>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {getFilteredCountries().map(({ code, name, continent }) => (
-                    <button
-                      key={code}
-                      onClick={() => handleCountryClick(code, name)}
-                      className="bg-white rounded-lg shadow hover:shadow-xl transition p-6 text-left group"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition">{name}</h3>
-                          <p className="text-sm text-gray-500">{code}</p>
-                        </div>
-                        <Globe className="w-6 h-6 text-blue-400" />
-                      </div>
-                      <p className="text-xs text-gray-400 mt-2">{continent}</p>
-                    </button>
-                  ))}
-                </div>
+                {tab === 'compare' ? (
+                  <CompareView />
+                ) : (
+                  <>
+                    <div className="flex justify-center gap-2 mb-6 flex-wrap">
+                      {continents.map(continent => (
+                        <button
+                          key={continent}
+                          onClick={() => setSelectedContinent(continent)}
+                          className={`px-4 py-2 rounded-lg font-medium transition ${
+                            selectedContinent === continent
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-700 hover:bg-blue-100'
+                          }`}
+                        >
+                          {continent}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {getFilteredCountries().map(({ code, name, continent }) => (
+                        <button
+                          key={code}
+                          onClick={() => handleCountryClick(code, name)}
+                          className="bg-white rounded-lg shadow hover:shadow-xl transition p-6 text-left group"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition">{name}</h3>
+                              <p className="text-sm text-gray-500">{code}</p>
+                            </div>
+                            <Globe className="w-6 h-6 text-blue-400" />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">{continent}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           );
