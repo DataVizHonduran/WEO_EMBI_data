@@ -263,17 +263,26 @@ except Exception as e:
 
 var_dict = {
     'NGDPD': 'GDP (US Dollars)',
+    'NGDPDPC': 'GDP per capita (USD)',
+    'NGDPRPPPPC': 'GDP per capita, PPP (intl $)',
     'LP': 'Population',
     'NGDP_RPCH': 'Real GDP growth (%)',
+    'NGAP_NPGDP': 'Output gap (% potential GDP)',
+    'LUR': 'Unemployment rate (%)',
     'NID_NGDP': 'Total investment (% of GDP)',
     'NGSD_NGDP': 'National savings (% of GDP)',
-    'PCPIPCH': 'Inflation, consumer prices (%)',
+    'PCPIPCH': 'Inflation, avg CPI (%)',
+    'PCPIEPCH': 'Inflation, end-of-period (%)',
     'GGR_NGDP': 'General government revenue (% of GDP)',
-    'GGX_NGDP': 'General government total expenditure (% of GDP)',
-    'GGXCNL_NGDP': 'General government net lending/borrowing (% of GDP)',
-    'GGXONLB_NGDP': 'General government net borrowing (% of GDP)',
-    'GGXWDG_NGDP': 'General government gross debt (% of GDP)',
+    'GGX_NGDP': 'General government expenditure (% of GDP)',
+    'GGXCNL_NGDP': 'Fiscal balance (% of GDP)',
+    'GGSB_NPGDP': 'Structural fiscal balance (% potential GDP)',
+    'GGXONLB_NGDP': 'Primary balance (% of GDP)',
+    'GGXWDG_NGDP': 'Gross debt (% of GDP)',
+    'GGXWDN_NGDP': 'Net debt (% of GDP)',
     'BCA_NGDPD': 'Current account balance (% of GDP)',
+    'TX_RPCH': 'Export volume growth (%)',
+    'TM_RPCH': 'Import volume growth (%)',
 }
 
 current_year_data = {}
@@ -354,12 +363,22 @@ dff.columns = pd.MultiIndex.from_tuples(columns_tuples, names=['Indicator', 'Tim
 dff = dff.sort_index(axis=1)
 
 logical_order = [
-    'GDP (US Dollars)', 'Population', 'Real GDP growth (%)',
-    'Inflation, consumer prices (%)', 'National savings (% of GDP)',
-    'Total investment (% of GDP)', 'Current account balance (% of GDP)',
-    'General government revenue (% of GDP)', 'General government total expenditure (% of GDP)',
-    'General government net lending/borrowing (% of GDP)',
-    'General government net borrowing (% of GDP)', 'General government gross debt (% of GDP)'
+    # Size & wealth
+    'GDP (US Dollars)', 'GDP per capita (USD)', 'GDP per capita, PPP (intl $)', 'Population',
+    # Growth & cycle
+    'Real GDP growth (%)', 'Output gap (% potential GDP)',
+    # Labor
+    'Unemployment rate (%)',
+    # Inflation
+    'Inflation, avg CPI (%)', 'Inflation, end-of-period (%)',
+    # External
+    'Current account balance (% of GDP)', 'Export volume growth (%)', 'Import volume growth (%)',
+    # Investment & savings
+    'Total investment (% of GDP)', 'National savings (% of GDP)',
+    # Fiscal
+    'General government revenue (% of GDP)', 'General government expenditure (% of GDP)',
+    'Fiscal balance (% of GDP)', 'Structural fiscal balance (% potential GDP)',
+    'Primary balance (% of GDP)', 'Gross debt (% of GDP)', 'Net debt (% of GDP)',
 ]
 
 
@@ -443,17 +462,26 @@ html_template = """<!DOCTYPE html>
 
         const indicators = [
           'Real GDP growth (%)',
-          'Inflation, consumer prices (%)',
-          'General government gross debt (% of GDP)',
-          'General government net lending/borrowing (% of GDP)',
+          'Output gap (% potential GDP)',
+          'Unemployment rate (%)',
+          'Inflation, avg CPI (%)',
+          'Inflation, end-of-period (%)',
           'Current account balance (% of GDP)',
-          'GDP (US Dollars)',
-          'Population',
+          'Export volume growth (%)',
+          'Import volume growth (%)',
+          'Fiscal balance (% of GDP)',
+          'Structural fiscal balance (% potential GDP)',
+          'Primary balance (% of GDP)',
+          'Gross debt (% of GDP)',
+          'Net debt (% of GDP)',
+          'General government revenue (% of GDP)',
+          'General government expenditure (% of GDP)',
           'Total investment (% of GDP)',
           'National savings (% of GDP)',
-          'General government revenue (% of GDP)',
-          'General government total expenditure (% of GDP)',
-          'General government net borrowing (% of GDP)',
+          'GDP (US Dollars)',
+          'GDP per capita (USD)',
+          'GDP per capita, PPP (intl $)',
+          'Population',
         ];
 
         const TrendingUp = () => (
