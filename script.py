@@ -8,6 +8,63 @@ import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+COUNTRY_NAME_TO_ISO = {
+    'Angola': 'AGO', 'Argentina': 'ARG', 'Bahrain': 'BHR', 'Brazil': 'BRA',
+    'Bulgaria': 'BGR', 'Chile': 'CHL', 'China': 'CHN', 'Colombia': 'COL',
+    'Costa Rica': 'CRI', "Cote D'Ivoire": 'CIV', 'Dominican Republic': 'DOM',
+    'Ecuador': 'ECU', 'Egypt': 'EGY', 'Ghana': 'GHA', 'Guatemala': 'GTM',
+    'Hungary': 'HUN', 'Jamaica': 'JAM', 'Jordan': 'JOR', 'Kazakhstan': 'KAZ',
+    'Kenya': 'KEN', 'Latvia': 'LVA', 'Malaysia': 'MYS', 'Mexico': 'MEX',
+    'Morocco': 'MAR', 'Nigeria': 'NGA', 'Oman': 'OMN', 'Pakistan': 'PAK',
+    'Panama': 'PAN', 'Peru': 'PER', 'Philippines': 'PHL', 'Poland': 'POL',
+    'Romania': 'ROU', 'Saudi Arabia': 'SAU', 'Serbia': 'SRB', 'South Africa': 'ZAF',
+    'Sri Lanka': 'LKA', 'Turkey': 'TUR', 'Ukraine': 'UKR',
+    'United Arab Emirates': 'ARE', 'Uruguay': 'URY',
+}
+
+RATINGS_NUMERIC = {
+    'AAA': 1, 'AA+': 2, 'AA': 3, 'AA-': 4,
+    'A+': 5, 'A': 6, 'A-': 7,
+    'BBB+': 8, 'BBB': 9, 'BBB-': 10,
+    'BB+': 11, 'BB': 12, 'BB-': 13,
+    'B+': 14, 'B': 15, 'B-': 16,
+    'CCC+': 17, 'CCC': 18, 'CCC-': 19,
+    'SD': 20, 'WD': 21, 'RD': 22, 'D': 23,
+}
+
+
+def rating_to_bucket(rating_str):
+    n = RATINGS_NUMERIC.get(rating_str, 99)
+    if n <= 10: return 'Investment Grade'
+    if n <= 13: return 'BB'
+    if n <= 16: return 'B'
+    return 'CCC & Below'
+
+
+def fetch_ratings():
+    """Scrape S&P sovereign ratings from Trading Economics; returns {iso: rating_str}."""
+    try:
+        tables = pd.read_html(
+            'https://tradingeconomics.com/country-list/rating',
+            storage_options={'User-Agent': 'Mozilla/5.0'},
+        )
+        df_r = tables[0]
+        country_col = df_r.columns[0]
+        rating_col = next(
+            (c for c in df_r.columns if 'S&P' in str(c) or 'Rating' in str(c)),
+            df_r.columns[1]
+        )
+        result = {}
+        for _, row in df_r.iterrows():
+            iso = COUNTRY_NAME_TO_ISO.get(str(row[country_col]).strip())
+            if iso:
+                result[iso] = str(row[rating_col]).strip()
+        print(f"✓ Ratings fetched for {len(result)} countries")
+        return result
+    except Exception as e:
+        print(f"⚠ Could not fetch ratings: {e}")
+        return {}
+
 current_year = datetime.now().year
 current_month = datetime.now().month
 
@@ -247,6 +304,14 @@ for country_code, df in country_dfs.items():
 
 print(f"\n✓ {len(country_metrics_json)} countries converted to JSON")
 
+# Fetch credit ratings and build peer groups
+country_ratings = fetch_ratings()
+rating_groups_ordered = ['Investment Grade', 'BB', 'B', 'CCC & Below']
+rating_groups = {k: [] for k in rating_groups_ordered}
+for iso, rating in country_ratings.items():
+    rating_groups[rating_to_bucket(rating)].append(iso)
+rating_groups = {k: v for k, v in rating_groups.items() if v}
+
 html_template = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -264,9 +329,11 @@ html_template = """<!DOCTYPE html>
     <script type="text/babel">
         const { useState, useMemo } = React;
 
-        const countryMetrics = COUNTRY_DATA_PLACEHOLDER;
-        const currentYear = "CURRENT_YEAR_PLACEHOLDER";
+        const countryMetrics  = COUNTRY_DATA_PLACEHOLDER;
+        const currentYear     = "CURRENT_YEAR_PLACEHOLDER";
         const weoReleaseLabel = "WEO_RELEASE_PLACEHOLDER";
+        const ratingGroups    = RATING_GROUPS_PLACEHOLDER;
+        const countryRatings  = COUNTRY_RATINGS_PLACEHOLDER;
 
         const countryData = {
           'Africa': {
@@ -388,36 +455,50 @@ html_template = """<!DOCTYPE html>
 
         // ── Compare tab ─────────────────────────────────────────────────────
         const CompareView = () => {
-          const [indicator, setIndicator] = useState(indicators[0]);
-          const [period, setPeriod] = useState(currentYear);
+          const [indicator,       setIndicator]       = useState(indicators[0]);
+          const [period,          setPeriod]          = useState(currentYear);
+          const [filterMode,      setFilterMode]      = useState('region');
           const [continentFilter, setContinentFilter] = useState('All');
+          const [ratingFilter,    setRatingFilter]    = useState('All');
 
-          const periods = [
-            { key: currentYear, label: currentYear },
+          const periods   = [
+            { key: currentYear,   label: currentYear },
             { key: '10yr_Median', label: '10yr Median' },
-            { key: '2019', label: '2019' },
+            { key: '2019',        label: '2019' },
           ];
-
-          const continents = ['All', ...Object.keys(countryData)];
+          const continents    = ['All', ...Object.keys(countryData)];
+          const ratingBuckets = ['All', ...Object.keys(ratingGroups)];
 
           const rows = useMemo(() => {
-            const source = continentFilter === 'All'
-              ? allCountriesFlat
-              : allCountriesFlat.filter(c => c.continent === continentFilter);
+            let source = allCountriesFlat;
+            if (filterMode === 'region' && continentFilter !== 'All')
+              source = source.filter(c => c.continent === continentFilter);
+            if (filterMode === 'rating' && ratingFilter !== 'All')
+              source = source.filter(c => (ratingGroups[ratingFilter] || []).includes(c.code));
 
             return source
-              .map(c => ({ ...c, value: countryMetrics[c.code]?.[indicator]?.[period] ?? null }))
+              .map(c => ({
+                ...c,
+                value:  countryMetrics[c.code]?.[indicator]?.[period]          ?? null,
+                median: countryMetrics[c.code]?.[indicator]?.['10yr_Median']   ?? null,
+                rating: countryRatings[c.code] ?? '',
+              }))
               .filter(c => c.value !== null)
               .sort((a, b) => b.value - a.value);
-          }, [indicator, period, continentFilter]);
+          }, [indicator, period, filterMode, continentFilter, ratingFilter]);
 
-          const maxAbs = useMemo(() => Math.max(...rows.map(r => Math.abs(r.value)), 1), [rows]);
+          const maxAbs     = useMemo(() => Math.max(...rows.map(r => Math.abs(r.value)), 1), [rows]);
           const hasNegative = rows.some(r => r.value < 0);
+          const showMedian  = period === currentYear;
+
+          // Convert a data value to a percentage position within the bar track
+          const valToPct = (v) => Math.min(Math.abs(v) / maxAbs * 100, 100);
 
           return (
             <div className="max-w-4xl mx-auto">
               {/* Controls */}
               <div className="bg-white rounded-xl shadow p-5 mb-6 flex flex-col gap-4">
+                {/* Indicator */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Indicator</label>
                   <select
@@ -430,79 +511,114 @@ html_template = """<!DOCTYPE html>
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-wrap gap-3">
+
+                <div className="flex flex-wrap gap-4">
+                  {/* Period */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Period</label>
                     <div className="flex gap-2">
                       {periods.map(p => (
-                        <button
-                          key={p.key}
-                          onClick={() => setPeriod(p.key)}
+                        <button key={p.key} onClick={() => setPeriod(p.key)}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
                             period === p.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'
-                          }`}
-                        >
+                          }`}>
                           {p.label}
                         </button>
                       ))}
                     </div>
                   </div>
+
+                  {/* Filter mode toggle */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Region</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {continents.map(c => (
-                        <button
-                          key={c}
-                          onClick={() => setContinentFilter(c)}
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Group by</label>
+                    <div className="flex gap-2">
+                      {[['region','Region'],['rating','Credit Rating']].map(([m, label]) => (
+                        <button key={m} onClick={() => setFilterMode(m)}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                            continentFilter === c ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'
-                          }`}
-                        >
-                          {c}
+                            filterMode === m ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-indigo-50'
+                          }`}>
+                          {label}
                         </button>
                       ))}
                     </div>
+                  </div>
+                </div>
+
+                {/* Context-sensitive bucket buttons */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                    {filterMode === 'region' ? 'Region' : 'Rating Tier'}
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {(filterMode === 'region' ? continents : ratingBuckets).map(opt => (
+                      <button key={opt}
+                        onClick={() => filterMode === 'region' ? setContinentFilter(opt) : setRatingFilter(opt)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                          (filterMode === 'region' ? continentFilter : ratingFilter) === opt
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-blue-100'
+                        }`}>
+                        {opt}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
               {/* Chart */}
               <div className="bg-white rounded-xl shadow p-6">
-                <p className="text-xs text-gray-400 mb-4">
-                  {rows.length} countries · sorted by value · {period === currentYear ? currentYear : period}
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs text-gray-400">
+                    {rows.length} countries · sorted by value · {period === currentYear ? currentYear : period}
+                  </p>
+                  {showMedian && (
+                    <p className="text-xs text-gray-400 flex items-center gap-1">
+                      <span className="inline-block w-4 border-t-2 border-dashed border-orange-400" />
+                      10yr median
+                    </p>
+                  )}
+                </div>
+
                 {rows.length === 0 && (
                   <p className="text-center text-gray-400 py-8">No data available for this selection.</p>
                 )}
+
                 <div className="space-y-1.5">
-                  {rows.map(({ code, name, value, continent }) => {
-                    const absPct = Math.abs(value) / maxAbs * 100;
+                  {rows.map(({ code, name, value, median, rating }) => {
+                    const absPct   = valToPct(value);
                     const positive = value >= 0;
+                    const medPct   = (showMedian && median != null) ? valToPct(median) : null;
+                    const medPos   = (medPct != null) ? medPct : null;
+                    const medPositive = median >= 0;
 
                     if (hasNegative) {
-                      // Diverging chart: zero line at 50%
-                      const halfPct = absPct / 2;
                       return (
                         <div key={code} className="flex items-center gap-2 group">
                           <div className="w-36 text-right text-xs text-gray-700 truncate group-hover:text-blue-700 font-medium" title={name}>
                             {name}
+                            {rating && <span className="ml-1 text-gray-400 font-normal">({rating})</span>}
                           </div>
-                          <div className="flex-1 flex items-center h-6">
-                            <div className="w-1/2 flex justify-end">
+                          {/* Diverging bar: zero at 50% */}
+                          <div className="flex-1 flex items-center h-6 relative">
+                            <div className="w-1/2 flex justify-end relative h-full">
                               {!positive && (
-                                <div
-                                  style={{ width: `${absPct}%` }}
-                                  className="h-5 bg-red-400 rounded-l"
-                                />
+                                <div style={{ width: `${absPct}%` }} className="h-5 bg-red-400 rounded-l relative">
+                                  {medPos != null && !medPositive && (
+                                    <div style={{ right: `${medPct / absPct * 100}%` }}
+                                      className="absolute top-0 bottom-0 w-0.5 border-r-2 border-dashed border-orange-400" />
+                                  )}
+                                </div>
                               )}
                             </div>
                             <div className="w-px h-5 bg-gray-400 mx-0.5 flex-shrink-0" />
-                            <div className="w-1/2 flex justify-start">
+                            <div className="w-1/2 flex justify-start relative h-full">
                               {positive && (
-                                <div
-                                  style={{ width: `${absPct}%` }}
-                                  className="h-5 bg-blue-500 rounded-r"
-                                />
+                                <div style={{ width: `${absPct}%` }} className="h-5 bg-blue-500 rounded-r relative">
+                                  {medPos != null && medPositive && (
+                                    <div style={{ left: `${medPct / absPct * 100}%` }}
+                                      className="absolute top-0 bottom-0 w-0.5 border-l-2 border-dashed border-orange-400" />
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -517,12 +633,14 @@ html_template = """<!DOCTYPE html>
                       <div key={code} className="flex items-center gap-2 group">
                         <div className="w-36 text-right text-xs text-gray-700 truncate group-hover:text-blue-700 font-medium" title={name}>
                           {name}
+                          {rating && <span className="ml-1 text-gray-400 font-normal">({rating})</span>}
                         </div>
-                        <div className="flex-1">
-                          <div
-                            style={{ width: `${absPct}%` }}
-                            className="h-5 bg-blue-500 rounded-r"
-                          />
+                        <div className="flex-1 relative h-5">
+                          <div style={{ width: `${absPct}%` }} className="h-5 bg-blue-500 rounded-r" />
+                          {medPos != null && (
+                            <div style={{ left: `${medPos}%` }}
+                              className="absolute top-0 bottom-0 w-0.5 border-l-2 border-dashed border-orange-400" />
+                          )}
                         </div>
                         <div className="w-14 text-xs font-semibold text-right text-blue-700">
                           {value.toFixed(1)}
@@ -651,9 +769,11 @@ html_template = """<!DOCTYPE html>
 </html>"""
 
 html_content = (html_template
-    .replace('COUNTRY_DATA_PLACEHOLDER', json.dumps(country_metrics_json, indent=2))
-    .replace('CURRENT_YEAR_PLACEHOLDER', current_year_str)
-    .replace('WEO_RELEASE_PLACEHOLDER', weo_release_label))
+    .replace('COUNTRY_DATA_PLACEHOLDER',    json.dumps(country_metrics_json, indent=2))
+    .replace('CURRENT_YEAR_PLACEHOLDER',    current_year_str)
+    .replace('WEO_RELEASE_PLACEHOLDER',     weo_release_label)
+    .replace('RATING_GROUPS_PLACEHOLDER',   json.dumps(rating_groups))
+    .replace('COUNTRY_RATINGS_PLACEHOLDER', json.dumps(country_ratings)))
 
 output_filename = os.path.join(SCRIPT_DIR, 'index.html')
 with open(output_filename, 'w', encoding='utf-8') as f:
