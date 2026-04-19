@@ -687,8 +687,12 @@ html_template = """<!DOCTYPE html>
                     onChange={e => setIndicator(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
-                    {indicators.map(ind => (
-                      <option key={ind} value={ind}>{ind}</option>
+                    {cardGroups.map(({ heading, indicators: groupInds }) => (
+                      <optgroup key={heading} label={heading}>
+                        {groupInds.filter(ind => indicators.includes(ind)).map(ind => (
+                          <option key={ind} value={ind}>{ind}</option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>
