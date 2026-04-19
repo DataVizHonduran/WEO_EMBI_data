@@ -978,7 +978,6 @@ html_template = """<!DOCTYPE html>
             return v.toFixed(1);
           };
 
-          // Compute nice ticks first; domain derives from tick extent for clean alignment
           const niceTicks = (rawMin, rawMax, n = 6) => {
             const range = rawMax - rawMin || 1;
             const rough = range / n;
@@ -992,13 +991,19 @@ html_template = """<!DOCTYPE html>
             return ticks;
           };
 
+          const catKey = p => colorMode === 'rating' ? p.bucket : p.continent;
+          const isVisible = p => !hidden.has(catKey(p));
+
+          // Visible points drive the scale so axis auto-adjusts when categories are toggled
+          const visiblePoints = useMemo(() => points.filter(isVisible), [points, hidden, colorMode]);
+
           const [xTicks, yTicks, xMin, xMax, yMin, yMax] = useMemo(() => {
-            if (!points.length) return [[], [], 0, 1, 0, 1];
-            const xs = points.map(p => p.x), ys = points.map(p => p.y);
+            if (!visiblePoints.length) return [[], [], 0, 1, 0, 1];
+            const xs = visiblePoints.map(p => p.x), ys = visiblePoints.map(p => p.y);
             const xt = niceTicks(Math.min(...xs), Math.max(...xs));
             const yt = niceTicks(Math.min(...ys), Math.max(...ys));
             return [xt, yt, xt[0], xt[xt.length-1], yt[0], yt[yt.length-1]];
-          }, [points]);
+          }, [visiblePoints]);
 
           const sx = v => PAD.l + (v - xMin) / (xMax - xMin) * iW;
           const sy = v => PAD.t + (1 - (v - yMin) / (yMax - yMin)) * iH;
@@ -1017,10 +1022,8 @@ html_template = """<!DOCTYPE html>
             setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, point });
           };
 
-          const catKey = p => colorMode === 'rating' ? p.bucket : p.continent;
-          const isVisible = p => !hidden.has(catKey(p));
-          const normalPts = points.filter(p => p.code !== highlightCode && isVisible(p));
-          const hlPt = highlightCode ? points.find(p => p.code === highlightCode) : null;
+          const normalPts = visiblePoints.filter(p => p.code !== highlightCode);
+          const hlPt = highlightCode ? visiblePoints.find(p => p.code === highlightCode) : null;
 
           return (
             <div className="max-w-5xl mx-auto">
