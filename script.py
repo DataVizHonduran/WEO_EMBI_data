@@ -288,7 +288,9 @@ var_dict = {
 current_year_data = {}
 median_10yr_data = {}
 data_2019 = {}
+series_store = {}
 current_year_str = str(current_year)
+SERIES_YEARS = list(range(2000, 2031))
 
 
 def extract_year_from_index(idx):
@@ -317,6 +319,7 @@ for var in var_dict.keys():
         all_series = w.getc(var)
         available = [c for c in target_countries if c in all_series.columns]
         series_data = all_series[available].ffill()
+        series_store[var] = series_data
 
         current_values, used_year = get_year_data(series_data, current_year)
         current_year_data[var] = current_values
@@ -412,6 +415,25 @@ for country_code, df in country_dfs.items():
 
 print(f"\n✓ {len(country_metrics_json)} countries converted to JSON")
 
+# Attach full time series (2000-2030) to each country-indicator
+for var, display_name in var_dict.items():
+    if var not in series_store:
+        continue
+    df_s = series_store[var]
+    idx_years = [extract_year_from_index(idx) for idx in df_s.index]
+    for iso in df_s.columns:
+        if iso not in country_metrics_json or display_name not in country_metrics_json[iso]:
+            continue
+        s = {}
+        for yr in SERIES_YEARS:
+            if yr in idx_years:
+                raw = df_s.iloc[idx_years.index(yr)][iso]
+                s[str(yr)] = round(float(raw), 2) if pd.notna(raw) else None
+            else:
+                s[str(yr)] = None
+        country_metrics_json[iso][display_name]['series'] = s
+print("✓ Time series data attached")
+
 # Build region-grouped country data for JS (only countries with WEO data)
 region_order = ['Africa', 'Americas', 'Asia-Pacific', 'Europe', 'Middle East']
 country_data_by_region = {r: {} for r in region_order}
@@ -503,6 +525,79 @@ html_template = """<!DOCTYPE html>
             </svg>
         );
 
+        // ── Shared utilities ────────────────────────────────────────────────
+        const fmt = v => {
+          const a = Math.abs(v);
+          if (a >= 1e6) return `${(v/1e6).toFixed(1)}M`;
+          if (a >= 1e3) return `${(v/1e3).toFixed(0)}k`;
+          if (a >= 10)  return v.toFixed(0);
+          return v.toFixed(1);
+        };
+
+        const niceTicks = (rawMin, rawMax, n = 6) => {
+          const range = rawMax - rawMin || 1;
+          const rough = range / n;
+          const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+          const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= rough) || rough;
+          const start = Math.floor(rawMin / step) * step;
+          const end   = Math.ceil(rawMax  / step) * step;
+          const ticks = [];
+          for (let t = start; t <= end + step * 0.001; t = parseFloat((t + step).toFixed(12)))
+            ticks.push(parseFloat(t.toFixed(12)));
+          return ticks;
+        };
+
+        // ── Mini time-series chart ───────────────────────────────────────────
+        const MiniChart = ({ series, showForecast }) => {
+          const intCY = parseInt(currentYear);
+          const entries = Object.entries(series)
+            .map(([yr, v]) => ({ yr: parseInt(yr), v }))
+            .filter(e => e.v !== null && (showForecast || e.yr <= intCY))
+            .sort((a, b) => a.yr - b.yr);
+
+          if (entries.length < 2) return <p className="text-xs text-gray-400 py-2 pl-1">No series data</p>;
+
+          const hist = entries.filter(e => e.yr <= intCY);
+          const fore = entries.filter(e => e.yr > intCY);
+          const vals = entries.map(e => e.v);
+          const yrs  = entries.map(e => e.yr);
+          const W = 560, H = 110;
+          const PL = 38, PR = 8, PT = 8, PB = 26;
+          const iW = W - PL - PR, iH = H - PT - PB;
+          const minY = Math.min(...vals), maxY = Math.max(...vals);
+          const minX = Math.min(...yrs),  maxX = Math.max(...yrs);
+          const sx = yr => PL + (yr - minX) / (maxX - minX) * iW;
+          const sy = v  => PT + (1 - (v - minY) / (maxY - minY || 1)) * iH;
+          const path = pts => pts.length < 2 ? '' :
+            pts.map((e, i) => `${i === 0 ? 'M' : 'L'}${sx(e.yr).toFixed(1)},${sy(e.v).toFixed(1)}`).join(' ');
+          const yTicks = niceTicks(minY, maxY, 4).filter(t => t >= minY - 0.001 && t <= maxY + 0.001);
+          const xLabels = [2000, 2005, 2010, 2015, 2020, intCY].filter(yr => yr >= minX && yr <= maxX);
+
+          return (
+            <div className="col-span-6 px-1 pb-2">
+              <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+                {minY < 0 && maxY > 0 && <line x1={PL} x2={W-PR} y1={sy(0)} y2={sy(0)} stroke="#e5e7eb" strokeWidth="1"/>}
+                {yTicks.map(t => (
+                  <g key={t}>
+                    <line x1={PL-3} x2={PL} y1={sy(t)} y2={sy(t)} stroke="#d1d5db" strokeWidth="0.8"/>
+                    <text x={PL-5} y={sy(t)+3} textAnchor="end" fontSize="9" fill="#9ca3af">{fmt(t)}</text>
+                  </g>
+                ))}
+                <line x1={sx(intCY)} x2={sx(intCY)} y1={PT} y2={H-PB} stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 2"/>
+                <path d={path(hist)} fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinejoin="round"/>
+                {showForecast && fore.length > 0 && hist.length > 0 && (
+                  <path d={`M${sx(hist[hist.length-1].yr).toFixed(1)},${sy(hist[hist.length-1].v).toFixed(1)} ` + path(fore).slice(1)}
+                    fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeDasharray="5 3" strokeLinejoin="round"/>
+                )}
+                <line x1={PL} x2={W-PR} y1={H-PB} y2={H-PB} stroke="#e5e7eb" strokeWidth="1"/>
+                {xLabels.map(yr => (
+                  <text key={yr} x={sx(yr)} y={H-PB+11} textAnchor="middle" fontSize="9" fill="#9ca3af">{yr}</text>
+                ))}
+              </svg>
+            </div>
+          );
+        };
+
         const cardGroups = [
           { heading: 'Size & Wealth', indicators: ['GDP (US Dollars)', 'GDP per capita (USD)', 'GDP per capita, PPP (intl $)', 'Population'] },
           { heading: 'Growth & Cycle', indicators: ['Real GDP growth (%)', 'Output gap (% potential GDP)'] },
@@ -531,17 +626,32 @@ html_template = """<!DOCTYPE html>
 
           const peerBucket = Object.entries(ratingGroups).find(([, codes]) => codes.includes(countryCode))?.[0] ?? null;
           const peerCodes  = peerBucket ? ratingGroups[peerBucket] : [];
+          const [expandedInd, setExpandedInd] = useState(null);
+          const [showForecast, setShowForecast] = useState(true);
 
-          const peerAverages = useMemo(() => {
-            const avgs = {};
+          const peerStats = useMemo(() => {
+            const stats = {};
             for (const indicator of Object.keys(metrics)) {
               const vals = peerCodes
                 .map(c => countryMetrics[c]?.[indicator]?.[currentYear] ?? null)
                 .filter(v => v !== null);
-              avgs[indicator] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+              if (!vals.length) { stats[indicator] = { avg: null, z: null }; continue; }
+              const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+              const std = Math.sqrt(vals.map(v => (v - avg) ** 2).reduce((a, b) => a + b, 0) / vals.length);
+              const cur = metrics[indicator][currentYear];
+              stats[indicator] = { avg, z: (std > 0 && cur != null) ? (cur - avg) / std : null };
             }
-            return avgs;
+            return stats;
           }, [peerCodes]);
+
+          const zColor = z => {
+            if (z == null) return 'text-gray-300';
+            const a = Math.abs(z);
+            if (a < 0.5) return 'text-gray-400';
+            if (a < 1.0) return 'text-amber-500';
+            if (a < 2.0) return 'text-orange-500';
+            return 'text-red-600 font-bold';
+          };
 
           const getChangeIndicator = (current, previous) => {
             if (current == null || previous == null) return null;
@@ -550,68 +660,92 @@ html_template = """<!DOCTYPE html>
             return change > 0 ? <TrendingUp /> : <TrendingDown />;
           };
 
-          const MetricRow = ({ label, data, peerAvg }) => (
-            <div className="grid grid-cols-5 gap-4 py-3 border-b border-gray-100 hover:bg-gray-50">
-              <div className="col-span-1 font-medium text-gray-700 text-sm">{label}</div>
-              <div className="text-right font-semibold text-blue-900">
-                {data[currentYear]?.toFixed(1) ?? 'N/A'}
-                {getChangeIndicator(data[currentYear], data['2019'])}
-              </div>
-              <div className="text-right text-gray-600">{data['10yr_Median']?.toFixed(1) ?? 'N/A'}</div>
-              <div className="text-right text-gray-600">{data['2019']?.toFixed(1) ?? 'N/A'}</div>
-              <div className="text-right text-purple-600 font-medium">{peerAvg != null ? peerAvg.toFixed(1) : 'N/A'}</div>
-            </div>
-          );
+          const MetricRow = ({ label, data, peerAvg, z }) => {
+            const isExpanded = expandedInd === label;
+            const hasSeries = data.series && Object.values(data.series).some(v => v !== null);
+            return (
+              <>
+                <div
+                  className={`grid grid-cols-6 gap-2 py-2.5 border-b border-gray-100 ${hasSeries ? 'cursor-pointer hover:bg-blue-50' : 'hover:bg-gray-50'} ${isExpanded ? 'bg-blue-50' : ''}`}
+                  onClick={() => hasSeries && setExpandedInd(isExpanded ? null : label)}
+                >
+                  <div className="col-span-2 font-medium text-gray-700 text-sm flex items-center gap-1">
+                    {hasSeries && <span className="text-blue-300 text-xs">{isExpanded ? '▾' : '▸'}</span>}
+                    {label}
+                  </div>
+                  <div className="text-right font-semibold text-blue-900 text-sm">
+                    {data[currentYear]?.toFixed(1) ?? 'N/A'}
+                    {getChangeIndicator(data[currentYear], data['2019'])}
+                  </div>
+                  <div className="text-right text-gray-500 text-sm">{data['10yr_Median']?.toFixed(1) ?? 'N/A'}</div>
+                  <div className="text-right text-gray-500 text-sm">{data['2019']?.toFixed(1) ?? 'N/A'}</div>
+                  <div className="text-right text-sm">
+                    <span className="text-purple-600">{peerAvg != null ? peerAvg.toFixed(1) : 'N/A'}</span>
+                    {z != null && <span className={`ml-1 text-xs ${zColor(z)}`}>{z > 0 ? '+' : ''}{z.toFixed(1)}σ</span>}
+                  </div>
+                </div>
+                {isExpanded && hasSeries && (
+                  <MiniChart series={data.series} showForecast={showForecast} />
+                )}
+              </>
+            );
+          };
 
           return (
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
-              <div className="mb-6 pb-4 border-b-2 border-blue-200">
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-2xl p-8 max-w-5xl mx-auto">
+              <div className="mb-5 pb-4 border-b-2 border-blue-200">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-800">{countryName}</h2>
-                    <p className="text-gray-600 text-lg">
+                    <p className="text-gray-600 text-lg flex items-center gap-2 flex-wrap mt-1">
                       {countryCode}
                       {countryRatings[countryCode] && (
-                        <span className="ml-3 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-sm font-semibold">
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-sm font-semibold">
                           S&P {countryRatings[countryCode]}
                         </span>
                       )}
                       {peerBucket && (
-                        <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-sm">
-                          {peerBucket} peer avg · n={peerCodes.length}
+                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-sm">
+                          {peerBucket} · n={peerCodes.length}
                         </span>
                       )}
+                      <button onClick={() => setShowForecast(v => !v)}
+                        className={`px-2 py-0.5 rounded text-xs font-medium border transition ${showForecast ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+                        {showForecast ? 'Forecast on' : 'Forecast off'}
+                      </button>
                     </p>
                   </div>
-                  <Globe className="w-16 h-16 text-blue-600" />
+                  <Globe className="w-14 h-14 text-blue-600 flex-shrink-0" />
                 </div>
               </div>
-              <div className="grid grid-cols-5 gap-4 mb-2 pb-2 border-b-2 border-gray-300">
-                <div className="col-span-1 font-bold text-gray-700">Indicator</div>
-                <div className="text-right font-bold text-blue-900">{currentYear}</div>
-                <div className="text-right font-bold text-gray-700">10yr Median</div>
-                <div className="text-right font-bold text-gray-700">2019</div>
-                <div className="text-right font-bold text-purple-700">Peer Avg</div>
+              <div className="grid grid-cols-6 gap-2 mb-2 pb-2 border-b-2 border-gray-300 text-xs font-bold">
+                <div className="col-span-2 text-gray-700">Indicator</div>
+                <div className="text-right text-blue-900">{currentYear}</div>
+                <div className="text-right text-gray-600">10yr Med</div>
+                <div className="text-right text-gray-600">2019</div>
+                <div className="text-right text-purple-700">Peer / Z</div>
               </div>
               <div className="space-y-0">
                 {cardGroups.map(({ heading, indicators: groupInds }) => {
                   const rows = groupInds.filter(ind => metrics[ind] != null);
-                  if (rows.length === 0) return null;
+                  if (!rows.length) return null;
                   return (
                     <div key={heading}>
                       <div className="mt-4 mb-1 px-1 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-200 pb-1">
                         {heading}
                       </div>
                       {rows.map(ind => (
-                        <MetricRow key={ind} label={ind} data={metrics[ind]} peerAvg={peerAverages[ind] ?? null} />
+                        <MetricRow key={ind} label={ind} data={metrics[ind]}
+                          peerAvg={peerStats[ind]?.avg ?? null}
+                          z={peerStats[ind]?.z ?? null} />
                       ))}
                     </div>
                   );
                 })}
               </div>
-              <div className="mt-6 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
-                Source: IMF World Economic Outlook Database · {weoReleaseLabel} WEO
-              </div>
+              <p className="mt-5 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
+                Click any row to see historical chart · Source: IMF {weoReleaseLabel} WEO
+              </p>
             </div>
           );
         };
@@ -939,6 +1073,8 @@ html_template = """<!DOCTYPE html>
           const [xPeriod, setXPeriod] = useState(currentYear);
           const [yInd, setYInd] = useState('Gross debt (% of GDP)');
           const [yPeriod, setYPeriod] = useState(currentYear);
+          const [sizeInd, setSizeInd] = useState('GDP (US Dollars)');
+          const [sizePeriod, setSizePeriod] = useState(currentYear);
           const [colorMode, setColorMode] = useState('rating');
           const periods = [{key: currentYear, label: currentYear}, {key: '10yr_Median', label: '10yr Avg'}, {key: '2019', label: '2019'}];
           const [hidden, setHidden] = useState(new Set());
@@ -965,37 +1101,17 @@ html_template = """<!DOCTYPE html>
               ...c,
               x: countryMetrics[c.code]?.[xInd]?.[xPeriod] ?? null,
               y: countryMetrics[c.code]?.[yInd]?.[yPeriod] ?? null,
+              sz: sizeInd !== 'None' ? (countryMetrics[c.code]?.[sizeInd]?.[sizePeriod] ?? null) : null,
               rating: countryRatings[c.code] ?? '',
               bucket: Object.entries(ratingGroups).find(([, codes]) => codes.includes(c.code))?.[0] ?? 'Unrated',
             }))
             .filter(c => c.x !== null && c.y !== null),
-          [xInd, xPeriod, yInd, yPeriod]);
-
-          const fmt = v => {
-            const a = Math.abs(v);
-            if (a >= 1e6) return `${(v/1e6).toFixed(1)}M`;
-            if (a >= 1e3) return `${(v/1e3).toFixed(0)}k`;
-            if (a >= 10)  return v.toFixed(0);
-            return v.toFixed(1);
-          };
-
-          const niceTicks = (rawMin, rawMax, n = 6) => {
-            const range = rawMax - rawMin || 1;
-            const rough = range / n;
-            const mag = Math.pow(10, Math.floor(Math.log10(rough)));
-            const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= rough) || rough;
-            const start = Math.floor(rawMin / step) * step;
-            const end   = Math.ceil(rawMax  / step) * step;
-            const ticks = [];
-            for (let t = start; t <= end + step * 0.001; t = parseFloat((t + step).toFixed(12)))
-              ticks.push(parseFloat(t.toFixed(12)));
-            return ticks;
-          };
+          [xInd, xPeriod, yInd, yPeriod, sizeInd, sizePeriod]);
 
           const catKey = p => colorMode === 'rating' ? p.bucket : p.continent;
           const isVisible = p => !hidden.has(catKey(p));
 
-          const iqrBounds = (vals) => {
+          const iqrBounds = vals => {
             const s = [...vals].sort((a, b) => a - b);
             const q1 = s[Math.floor(s.length * 0.25)];
             const q3 = s[Math.floor(s.length * 0.75)];
@@ -1003,7 +1119,6 @@ html_template = """<!DOCTYPE html>
             return [q1 - 1.5 * iqr, q3 + 1.5 * iqr];
           };
 
-          // Visible points drive the scale so axis auto-adjusts when categories or outlier toggle changes
           const visiblePoints = useMemo(() => {
             const base = points.filter(isVisible);
             if (!trimOutliers || base.length < 4) return base;
@@ -1019,6 +1134,17 @@ html_template = """<!DOCTYPE html>
             const yt = niceTicks(Math.min(...ys), Math.max(...ys));
             return [xt, yt, xt[0], xt[xt.length-1], yt[0], yt[yt.length-1]];
           }, [visiblePoints]);
+
+          // Bubble size: log scale so GDP doesn't make everyone else a dot
+          const [szLogMin, szLogMax] = useMemo(() => {
+            const vals = visiblePoints.map(p => p.sz).filter(v => v != null && v > 0);
+            if (!vals.length) return [0, 1];
+            return [Math.log(Math.min(...vals)), Math.log(Math.max(...vals))];
+          }, [visiblePoints]);
+          const getRadius = p => {
+            if (sizeInd === 'None' || p.sz == null || p.sz <= 0) return 5;
+            return 3 + (Math.log(p.sz) - szLogMin) / (szLogMax - szLogMin + 0.001) * 13;
+          };
 
           const sx = v => PAD.l + (v - xMin) / (xMax - xMin) * iW;
           const sy = v => PAD.t + (1 - (v - yMin) / (yMax - yMin)) * iH;
@@ -1040,138 +1166,138 @@ html_template = """<!DOCTYPE html>
           const normalPts = visiblePoints.filter(p => p.code !== highlightCode);
           const hlPt = highlightCode ? visiblePoints.find(p => p.code === highlightCode) : null;
 
+          const AxisDropdown = ({ value, onChange, period, onPeriod, label }) => (
+            <div className="flex flex-col gap-1">
+              <label className="block text-xs font-semibold text-gray-500 uppercase">{label}</label>
+              <select value={value} onChange={e => onChange(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                {cardGroups.map(({ heading, indicators: gi }) => (
+                  <optgroup key={heading} label={heading}>
+                    {gi.filter(i => indicators.includes(i)).map(i => <option key={i} value={i}>{i}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+              <div className="flex gap-1">
+                {periods.map(p => (
+                  <button key={p.key} onClick={() => onPeriod(p.key)}
+                    className={`px-2 py-0.5 rounded text-xs font-medium transition ${
+                      period === p.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-blue-50'
+                    }`}>{p.label}</button>
+                ))}
+              </div>
+            </div>
+          );
+
           return (
             <div className="max-w-5xl mx-auto">
-              {/* Controls */}
               <div className="bg-white rounded-xl shadow p-5 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <AxisDropdown label="X Axis" value={xInd} onChange={setXInd} period={xPeriod} onPeriod={setXPeriod} />
+                <AxisDropdown label="Y Axis" value={yInd} onChange={setYInd} period={yPeriod} onPeriod={setYPeriod} />
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase">X Axis</label>
-                  <select value={xInd} onChange={e => setXInd(e.target.value)}
+                  <label className="block text-xs font-semibold text-gray-500 uppercase">Bubble Size</label>
+                  <select value={sizeInd} onChange={e => setSizeInd(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="None">— flat dots —</option>
                     {cardGroups.map(({ heading, indicators: gi }) => (
                       <optgroup key={heading} label={heading}>
                         {gi.filter(i => indicators.includes(i)).map(i => <option key={i} value={i}>{i}</option>)}
                       </optgroup>
                     ))}
                   </select>
-                  <div className="flex gap-1">
-                    {periods.map(p => (
-                      <button key={p.key} onClick={() => setXPeriod(p.key)}
-                        className={`px-2 py-0.5 rounded text-xs font-medium transition ${
-                          xPeriod === p.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-blue-50'
-                        }`}>{p.label}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase">Y Axis</label>
-                  <select value={yInd} onChange={e => setYInd(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
-                    {cardGroups.map(({ heading, indicators: gi }) => (
-                      <optgroup key={heading} label={heading}>
-                        {gi.filter(i => indicators.includes(i)).map(i => <option key={i} value={i}>{i}</option>)}
-                      </optgroup>
-                    ))}
-                  </select>
-                  <div className="flex gap-1">
-                    {periods.map(p => (
-                      <button key={p.key} onClick={() => setYPeriod(p.key)}
-                        className={`px-2 py-0.5 rounded text-xs font-medium transition ${
-                          yPeriod === p.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-blue-50'
-                        }`}>{p.label}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Color by</label>
-                    <div className="flex gap-2">
-                      {[['rating','Credit Rating'],['region','Region']].map(([m, lbl]) => (
-                        <button key={m} onClick={() => setColorMode(m)}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                            colorMode === m ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-indigo-50'
-                          }`}>{lbl}</button>
+                  {sizeInd !== 'None' && (
+                    <div className="flex gap-1">
+                      {periods.map(p => (
+                        <button key={p.key} onClick={() => setSizePeriod(p.key)}
+                          className={`px-2 py-0.5 rounded text-xs font-medium transition ${
+                            sizePeriod === p.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-blue-50'
+                          }`}>{p.label}</button>
                       ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-4 items-start">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Color by</label>
+                      <div className="flex gap-2">
+                        {[['rating','Credit Rating'],['region','Region']].map(([m, lbl]) => (
+                          <button key={m} onClick={() => setColorMode(m)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                              colorMode === m ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-indigo-50'
+                            }`}>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Outliers</label>
+                      <button onClick={() => setTrimOutliers(v => !v)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
+                          trimOutliers ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-rose-50'
+                        }`}>
+                        {trimOutliers ? '✕ Hiding outliers' : 'Hide outliers'}
+                      </button>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Outliers</label>
-                    <button onClick={() => setTrimOutliers(v => !v)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
-                        trimOutliers
-                          ? 'bg-rose-600 text-white border-rose-600'
-                          : 'bg-white text-gray-600 border-gray-300 hover:bg-rose-50'
-                      }`}>
-                      {trimOutliers ? '✕ Hiding outliers' : 'Hide outliers'}
-                    </button>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Highlight Country</label>
+                    <select value={highlightCode} onChange={e => setHighlightCode(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                      <option value="">— none —</option>
+                      {allCountriesFlat
+                        .filter(c => points.some(p => p.code === c.code))
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map(c => <option key={c.code} value={c.code}>{c.name}</option>)
+                      }
+                    </select>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Highlight Country</label>
-                  <select value={highlightCode} onChange={e => setHighlightCode(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
-                    <option value="">— none —</option>
-                    {allCountriesFlat
-                      .filter(c => points.some(p => p.code === c.code))
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map(c => <option key={c.code} value={c.code}>{c.name}</option>)
-                    }
-                  </select>
                 </div>
               </div>
 
-              {/* Chart */}
               <div className="bg-white rounded-xl shadow p-4">
                 <div ref={chartRef} className="relative w-full" onMouseLeave={() => setTooltip(null)}>
                   <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full" preserveAspectRatio="xMidYMid meet">
-                    {/* Grid */}
                     {yTicks.map(t => <line key={t} x1={PAD.l} x2={VW-PAD.r} y1={sy(t)} y2={sy(t)} stroke="#e5e7eb" strokeWidth="1"/>)}
                     {xTicks.map(t => <line key={t} x1={sx(t)} x2={sx(t)} y1={PAD.t} y2={VH-PAD.b} stroke="#e5e7eb" strokeWidth="1"/>)}
-                    {/* Zero lines */}
                     {xMin < 0 && xMax > 0 && <line x1={sx(0)} x2={sx(0)} y1={PAD.t} y2={VH-PAD.b} stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="4 2"/>}
                     {yMin < 0 && yMax > 0 && <line x1={PAD.l} x2={VW-PAD.r} y1={sy(0)} y2={sy(0)} stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="4 2"/>}
-                    {/* Axes */}
                     <line x1={PAD.l} x2={VW-PAD.r} y1={VH-PAD.b} y2={VH-PAD.b} stroke="#6b7280" strokeWidth="1.5"/>
                     <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={VH-PAD.b} stroke="#6b7280" strokeWidth="1.5"/>
-                    {/* X tick labels */}
                     {xTicks.map(t => (
                       <g key={t}>
                         <line x1={sx(t)} x2={sx(t)} y1={VH-PAD.b} y2={VH-PAD.b+5} stroke="#6b7280" strokeWidth="1"/>
                         <text x={sx(t)} y={VH-PAD.b+18} textAnchor="middle" fontSize="11" fill="#6b7280">{fmt(t)}</text>
                       </g>
                     ))}
-                    {/* Y tick labels */}
                     {yTicks.map(t => (
                       <g key={t}>
                         <line x1={PAD.l-5} x2={PAD.l} y1={sy(t)} y2={sy(t)} stroke="#6b7280" strokeWidth="1"/>
                         <text x={PAD.l-8} y={sy(t)+4} textAnchor="end" fontSize="11" fill="#6b7280">{fmt(t)}</text>
                       </g>
                     ))}
-                    {/* Axis labels */}
-                    <text x={PAD.l + iW/2} y={VH-6} textAnchor="middle" fontSize="12" fill="#374151" fontWeight="600">{xInd} ({xPeriod === '10yr_Median' ? '10yr Avg' : xPeriod})</text>
-                    <text x={14} y={PAD.t + iH/2} textAnchor="middle" fontSize="12" fill="#374151" fontWeight="600"
-                      transform={`rotate(-90,14,${PAD.t+iH/2})`}>{yInd} ({yPeriod === '10yr_Median' ? '10yr Avg' : yPeriod})</text>
-                    {/* Normal dots */}
+                    <text x={PAD.l+iW/2} y={VH-6} textAnchor="middle" fontSize="12" fill="#374151" fontWeight="600">
+                      {xInd} ({xPeriod === '10yr_Median' ? '10yr Avg' : xPeriod})
+                    </text>
+                    <text x={14} y={PAD.t+iH/2} textAnchor="middle" fontSize="12" fill="#374151" fontWeight="600"
+                      transform={`rotate(-90,14,${PAD.t+iH/2})`}>
+                      {yInd} ({yPeriod === '10yr_Median' ? '10yr Avg' : yPeriod})
+                    </text>
                     {normalPts.map(p => (
-                      <circle key={p.code} cx={sx(p.x)} cy={sy(p.y)} r="5"
-                        fill={getColor(p)} fillOpacity="0.78" stroke="white" strokeWidth="0.5"
+                      <circle key={p.code} cx={sx(p.x)} cy={sy(p.y)} r={getRadius(p)}
+                        fill={getColor(p)} fillOpacity="0.75" stroke="white" strokeWidth="0.5"
                         style={{cursor:'pointer'}}
                         onMouseEnter={e => handleMouseEnter(e, p)}/>
                     ))}
-                    {/* Highlighted dot */}
                     {hlPt && (
                       <g>
-                        <circle cx={sx(hlPt.x)} cy={sy(hlPt.y)} r="9"
+                        <circle cx={sx(hlPt.x)} cy={sy(hlPt.y)} r={Math.max(getRadius(hlPt) + 4, 9)}
                           fill={getColor(hlPt)} stroke="white" strokeWidth="2.5"
-                          style={{cursor:'pointer'}}
-                          onMouseEnter={e => handleMouseEnter(e, hlPt)}/>
-                        <text x={sx(hlPt.x)} y={sy(hlPt.y)-14} textAnchor="middle"
-                          fontSize="12" fontWeight="700" fill="#1e293b"
+                          style={{cursor:'pointer'}} onMouseEnter={e => handleMouseEnter(e, hlPt)}/>
+                        <text x={sx(hlPt.x)} y={sy(hlPt.y)-Math.max(getRadius(hlPt)+4,9)-4}
+                          textAnchor="middle" fontSize="12" fontWeight="700" fill="#1e293b"
                           stroke="white" strokeWidth="3" paintOrder="stroke">{hlPt.name}</text>
                       </g>
                     )}
                   </svg>
-                  {/* Tooltip */}
                   {tooltip && (
                     <div style={{left: tooltip.x+14, top: tooltip.y-10, pointerEvents:'none'}}
                       className="absolute bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2 text-xs z-10 min-w-max">
@@ -1182,10 +1308,10 @@ html_template = """<!DOCTYPE html>
                       </p>
                       <p><span className="text-gray-400">x  </span><span className="font-semibold">{fmt(tooltip.point.x)}</span></p>
                       <p><span className="text-gray-400">y  </span><span className="font-semibold">{fmt(tooltip.point.y)}</span></p>
+                      {tooltip.point.sz != null && <p><span className="text-gray-400">sz </span><span className="font-semibold">{fmt(tooltip.point.sz)}</span></p>}
                     </div>
                   )}
                 </div>
-                {/* Legend — click to toggle */}
                 <div className="flex flex-wrap gap-2 justify-center mt-3 pt-3 border-t border-gray-100">
                   {legendEntries.map(([lbl, color]) => {
                     const off = hidden.has(lbl);
@@ -1194,17 +1320,141 @@ html_template = """<!DOCTYPE html>
                         className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border transition ${
                           off ? 'border-gray-200 text-gray-300 bg-gray-50' : 'border-gray-200 text-gray-600 bg-white hover:bg-gray-50'
                         }`}>
-                        <span className="inline-block w-3 h-3 rounded-full flex-shrink-0"
-                          style={{background: off ? '#e5e7eb' : color}}/>
+                        <span className="inline-block w-3 h-3 rounded-full flex-shrink-0" style={{background: off ? '#e5e7eb' : color}}/>
                         <span className={off ? 'line-through' : ''}>{lbl}</span>
                       </button>
                     );
                   })}
                 </div>
                 <p className="text-center text-xs text-gray-400 mt-2">
-                  {normalPts.length + (hlPt && isVisible(hlPt) ? 1 : 0)} of {points.length} countries shown · {currentYear} · Source: IMF {weoReleaseLabel} WEO
+                  {normalPts.length + (hlPt ? 1 : 0)} of {points.length} countries shown · Source: IMF {weoReleaseLabel} WEO
                 </p>
               </div>
+            </div>
+          );
+        };
+
+        // ── Multi-country comparison ─────────────────────────────────────────
+        const MultiView = () => {
+          const [selected, setSelected] = useState([]);
+          const [search, setSearch] = useState('');
+
+          const addCountry = code => {
+            if (selected.length >= 5 || selected.includes(code)) return;
+            setSelected(prev => [...prev, code]);
+            setSearch('');
+          };
+          const removeCountry = code => setSelected(prev => prev.filter(c => c !== code));
+
+          const getName = code => allCountriesFlat.find(c => c.code === code)?.name ?? code;
+
+          const suggestions = useMemo(() => {
+            if (!search.trim()) return [];
+            const q = search.toLowerCase();
+            return allCountriesFlat
+              .filter(c => !selected.includes(c.code) && (c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)))
+              .slice(0, 8);
+          }, [search, selected]);
+
+          // Row heatmap: for each indicator, color cells based on rank within selected set
+          const cellBg = (val, allVals) => {
+            const valid = allVals.filter(v => v != null);
+            if (valid.length < 2 || val == null) return '';
+            const min = Math.min(...valid), max = Math.max(...valid);
+            const pct = max === min ? 0.5 : (val - min) / (max - min);
+            const r = Math.round(255 - pct * 80);
+            const g = Math.round(235 - pct * 50);
+            const b = Math.round(255 - pct * 80);
+            return `rgb(${r},${g},${b})`;
+          };
+
+          return (
+            <div className="max-w-6xl mx-auto">
+              {/* Country picker */}
+              <div className="bg-white rounded-xl shadow p-5 mb-6">
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Add Countries (up to 5)</label>
+                <div className="relative">
+                  <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder="Search country name or code…"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+                  {suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-20 mt-1">
+                      {suggestions.map(c => (
+                        <button key={c.code} onClick={() => addCountry(c.code)}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 flex items-center justify-between">
+                          <span>{c.name}</span>
+                          <span className="text-xs text-gray-400">{countryRatings[c.code] ?? ''} · {c.continent}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {selected.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {selected.map(code => (
+                      <span key={code} className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                        {getName(code)}
+                        {countryRatings[code] && <span className="text-blue-500 text-xs">({countryRatings[code]})</span>}
+                        <button onClick={() => removeCountry(code)} className="text-blue-400 hover:text-blue-700 ml-0.5">×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {selected.length === 0 ? (
+                <div className="text-center text-gray-400 py-16">Search and add countries above to compare them side by side.</div>
+              ) : (
+                <div className="bg-white rounded-xl shadow overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b-2 border-gray-200">
+                        <th className="text-left px-4 py-3 text-gray-600 font-semibold w-56">Indicator</th>
+                        {selected.map(code => (
+                          <th key={code} className="text-right px-4 py-3 text-blue-800 font-bold min-w-28">
+                            {getName(code)}
+                            {countryRatings[code] && <div className="text-xs font-normal text-gray-400">{countryRatings[code]}</div>}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cardGroups.map(({ heading, indicators: groupInds }) => {
+                        const visInds = groupInds.filter(ind =>
+                          selected.some(code => countryMetrics[code]?.[ind]?.[currentYear] != null)
+                        );
+                        if (!visInds.length) return null;
+                        return (
+                          <React.Fragment key={heading}>
+                            <tr className="bg-gray-50">
+                              <td colSpan={selected.length + 1} className="px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-400">
+                                {heading}
+                              </td>
+                            </tr>
+                            {visInds.map(ind => {
+                              const vals = selected.map(code => countryMetrics[code]?.[ind]?.[currentYear] ?? null);
+                              return (
+                                <tr key={ind} className="border-b border-gray-100 hover:bg-blue-50">
+                                  <td className="px-4 py-2 text-gray-700 text-xs">{ind}</td>
+                                  {selected.map((code, i) => (
+                                    <td key={code} className="px-4 py-2 text-right font-semibold text-xs"
+                                      style={{background: cellBg(vals[i], vals)}}>
+                                      {vals[i] != null ? fmt(vals[i]) : <span className="text-gray-300">N/A</span>}
+                                    </td>
+                                  ))}
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <p className="text-center text-xs text-gray-400 py-3 border-t border-gray-100">
+                    {currentYear} values · Source: IMF {weoReleaseLabel} WEO
+                  </p>
+                </div>
+              )}
             </div>
           );
         };
@@ -1264,7 +1514,7 @@ html_template = """<!DOCTYPE html>
                 </div>
 
                 <div className="flex justify-center gap-2 mb-6">
-                  {[['countries', 'Countries'], ['compare', 'Compare'], ['graph', 'Graph']].map(([key, label]) => (
+                  {[['countries', 'Countries'], ['compare', 'Compare'], ['graph', 'Graph'], ['multi', 'Multi']].map(([key, label]) => (
                     <button
                       key={key}
                       onClick={() => setTab(key)}
@@ -1279,6 +1529,8 @@ html_template = """<!DOCTYPE html>
 
                 {tab === 'graph' ? (
                   <ScatterView />
+                ) : tab === 'multi' ? (
+                  <MultiView />
                 ) : tab === 'compare' ? (
                   <CompareView />
                 ) : (
