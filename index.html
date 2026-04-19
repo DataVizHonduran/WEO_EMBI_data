@@ -7698,6 +7698,20 @@
             );
           }
 
+          const peerBucket = Object.entries(ratingGroups).find(([, codes]) => codes.includes(countryCode))?.[0] ?? null;
+          const peerCodes  = peerBucket ? ratingGroups[peerBucket] : [];
+
+          const peerAverages = useMemo(() => {
+            const avgs = {};
+            for (const indicator of Object.keys(metrics)) {
+              const vals = peerCodes
+                .map(c => countryMetrics[c]?.[indicator]?.[currentYear] ?? null)
+                .filter(v => v !== null);
+              avgs[indicator] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+            }
+            return avgs;
+          }, [peerCodes]);
+
           const getChangeIndicator = (current, previous) => {
             if (current == null || previous == null) return null;
             const change = current - previous;
@@ -7705,8 +7719,8 @@
             return change > 0 ? <TrendingUp /> : <TrendingDown />;
           };
 
-          const MetricRow = ({ label, data }) => (
-            <div className="grid grid-cols-4 gap-4 py-3 border-b border-gray-100 hover:bg-gray-50">
+          const MetricRow = ({ label, data, peerAvg }) => (
+            <div className="grid grid-cols-5 gap-4 py-3 border-b border-gray-100 hover:bg-gray-50">
               <div className="col-span-1 font-medium text-gray-700 text-sm">{label}</div>
               <div className="text-right font-semibold text-blue-900">
                 {data[currentYear]?.toFixed(1) ?? 'N/A'}
@@ -7714,6 +7728,7 @@
               </div>
               <div className="text-right text-gray-600">{data['10yr_Median']?.toFixed(1) ?? 'N/A'}</div>
               <div className="text-right text-gray-600">{data['2019']?.toFixed(1) ?? 'N/A'}</div>
+              <div className="text-right text-purple-600 font-medium">{peerAvg != null ? peerAvg.toFixed(1) : 'N/A'}</div>
             </div>
           );
 
@@ -7730,20 +7745,26 @@
                           S&P {countryRatings[countryCode]}
                         </span>
                       )}
+                      {peerBucket && (
+                        <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-sm">
+                          {peerBucket} peer avg · n={peerCodes.length}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <Globe className="w-16 h-16 text-blue-600" />
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-4 mb-2 pb-2 border-b-2 border-gray-300">
+              <div className="grid grid-cols-5 gap-4 mb-2 pb-2 border-b-2 border-gray-300">
                 <div className="col-span-1 font-bold text-gray-700">Indicator</div>
                 <div className="text-right font-bold text-blue-900">{currentYear}</div>
                 <div className="text-right font-bold text-gray-700">10yr Median</div>
                 <div className="text-right font-bold text-gray-700">2019</div>
+                <div className="text-right font-bold text-purple-700">Peer Avg</div>
               </div>
               <div className="space-y-0">
                 {Object.entries(metrics).map(([key, value]) => (
-                  <MetricRow key={key} label={key} data={value} />
+                  <MetricRow key={key} label={key} data={value} peerAvg={peerAverages[key] ?? null} />
                 ))}
               </div>
               <div className="mt-6 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
