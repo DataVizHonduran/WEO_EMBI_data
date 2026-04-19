@@ -13,7 +13,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo } = React;
+        const { useState, useMemo, useRef } = React;
 
         const countryMetrics  = {
   "AGO": {
@@ -13644,6 +13644,231 @@
           );
         };
 
+        // ── Scatter / Graph tab ─────────────────────────────────────────────
+        const ratingColors = {
+          'A & Above':   '#059669',
+          'BBB':         '#34d399',
+          'BB':          '#f59e0b',
+          'B':           '#f97316',
+          'CCC & Below': '#dc2626',
+          'Unrated':     '#9ca3af',
+        };
+        const regionColors = {
+          'Africa':       '#8b5cf6',
+          'Americas':     '#3b82f6',
+          'Asia-Pacific': '#10b981',
+          'Europe':       '#6366f1',
+          'Middle East':  '#f59e0b',
+        };
+
+        const ScatterView = () => {
+          const [xInd, setXInd] = useState('GDP per capita (USD)');
+          const [yInd, setYInd] = useState('Gross debt (% of GDP)');
+          const [colorMode, setColorMode] = useState('rating');
+          const [highlightCode, setHighlightCode] = useState('');
+          const [tooltip, setTooltip] = useState(null);
+          const chartRef = useRef(null);
+
+          const VW = 800, VH = 460;
+          const PAD = { l: 72, r: 24, t: 24, b: 62 };
+          const iW = VW - PAD.l - PAD.r;
+          const iH = VH - PAD.t - PAD.b;
+
+          const points = useMemo(() => allCountriesFlat
+            .map(c => ({
+              ...c,
+              x: countryMetrics[c.code]?.[xInd]?.[currentYear] ?? null,
+              y: countryMetrics[c.code]?.[yInd]?.[currentYear] ?? null,
+              rating: countryRatings[c.code] ?? '',
+              bucket: Object.entries(ratingGroups).find(([, codes]) => codes.includes(c.code))?.[0] ?? 'Unrated',
+            }))
+            .filter(c => c.x !== null && c.y !== null),
+          [xInd, yInd]);
+
+          const [xMin, xMax, yMin, yMax] = useMemo(() => {
+            if (!points.length) return [0, 1, 0, 1];
+            const xs = points.map(p => p.x), ys = points.map(p => p.y);
+            const xPad = (Math.max(...xs) - Math.min(...xs)) * 0.05 || 1;
+            const yPad = (Math.max(...ys) - Math.min(...ys)) * 0.05 || 1;
+            return [Math.min(...xs) - xPad, Math.max(...xs) + xPad,
+                    Math.min(...ys) - yPad, Math.max(...ys) + yPad];
+          }, [points]);
+
+          const sx = v => PAD.l + (v - xMin) / (xMax - xMin) * iW;
+          const sy = v => PAD.t + (1 - (v - yMin) / (yMax - yMin)) * iH;
+
+          const fmt = v => {
+            const a = Math.abs(v);
+            if (a >= 1e6) return `${(v/1e6).toFixed(1)}M`;
+            if (a >= 1e3) return `${(v/1e3).toFixed(0)}k`;
+            return v.toFixed(1);
+          };
+
+          const makeTicks = (min, max, n = 5) => {
+            const range = max - min || 1;
+            const raw = range / n;
+            const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+            const step = Math.ceil(raw / mag) * mag || 1;
+            const start = Math.floor(min / step) * step;
+            const ticks = [];
+            for (let t = start; t <= max + step * 0.5; t += step)
+              if (t >= min - step * 0.1) ticks.push(parseFloat(t.toFixed(10)));
+            return ticks;
+          };
+
+          const xTicks = useMemo(() => makeTicks(xMin, xMax), [xMin, xMax]);
+          const yTicks = useMemo(() => makeTicks(yMin, yMax), [yMin, yMax]);
+
+          const getColor = p => colorMode === 'rating'
+            ? (ratingColors[p.bucket] ?? '#9ca3af')
+            : (regionColors[p.continent] ?? '#9ca3af');
+
+          const legendEntries = colorMode === 'rating'
+            ? Object.entries(ratingColors).filter(([k]) => points.some(p => p.bucket === k))
+            : Object.entries(regionColors).filter(([k]) => points.some(p => p.continent === k));
+
+          const handleMouseEnter = (e, point) => {
+            if (!chartRef.current) return;
+            const rect = chartRef.current.getBoundingClientRect();
+            setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, point });
+          };
+
+          const normalPts = points.filter(p => p.code !== highlightCode);
+          const hlPt = highlightCode ? points.find(p => p.code === highlightCode) : null;
+
+          return (
+            <div className="max-w-5xl mx-auto">
+              {/* Controls */}
+              <div className="bg-white rounded-xl shadow p-5 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">X Axis</label>
+                  <select value={xInd} onChange={e => setXInd(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    {cardGroups.map(({ heading, indicators: gi }) => (
+                      <optgroup key={heading} label={heading}>
+                        {gi.filter(i => indicators.includes(i)).map(i => <option key={i} value={i}>{i}</option>)}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Y Axis</label>
+                  <select value={yInd} onChange={e => setYInd(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    {cardGroups.map(({ heading, indicators: gi }) => (
+                      <optgroup key={heading} label={heading}>
+                        {gi.filter(i => indicators.includes(i)).map(i => <option key={i} value={i}>{i}</option>)}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Color by</label>
+                  <div className="flex gap-2">
+                    {[['rating','Credit Rating'],['region','Region']].map(([m, lbl]) => (
+                      <button key={m} onClick={() => setColorMode(m)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                          colorMode === m ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-indigo-50'
+                        }`}>{lbl}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Highlight Country</label>
+                  <select value={highlightCode} onChange={e => setHighlightCode(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="">— none —</option>
+                    {allCountriesFlat
+                      .filter(c => points.some(p => p.code === c.code))
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map(c => <option key={c.code} value={c.code}>{c.name}</option>)
+                    }
+                  </select>
+                </div>
+              </div>
+
+              {/* Chart */}
+              <div className="bg-white rounded-xl shadow p-4">
+                <div ref={chartRef} className="relative w-full" onMouseLeave={() => setTooltip(null)}>
+                  <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full" preserveAspectRatio="xMidYMid meet">
+                    {/* Grid */}
+                    {yTicks.map(t => <line key={t} x1={PAD.l} x2={VW-PAD.r} y1={sy(t)} y2={sy(t)} stroke="#e5e7eb" strokeWidth="1"/>)}
+                    {xTicks.map(t => <line key={t} x1={sx(t)} x2={sx(t)} y1={PAD.t} y2={VH-PAD.b} stroke="#e5e7eb" strokeWidth="1"/>)}
+                    {/* Zero lines */}
+                    {xMin < 0 && xMax > 0 && <line x1={sx(0)} x2={sx(0)} y1={PAD.t} y2={VH-PAD.b} stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="4 2"/>}
+                    {yMin < 0 && yMax > 0 && <line x1={PAD.l} x2={VW-PAD.r} y1={sy(0)} y2={sy(0)} stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="4 2"/>}
+                    {/* Axes */}
+                    <line x1={PAD.l} x2={VW-PAD.r} y1={VH-PAD.b} y2={VH-PAD.b} stroke="#6b7280" strokeWidth="1.5"/>
+                    <line x1={PAD.l} x2={PAD.l} y1={PAD.t} y2={VH-PAD.b} stroke="#6b7280" strokeWidth="1.5"/>
+                    {/* X tick labels */}
+                    {xTicks.map(t => (
+                      <g key={t}>
+                        <line x1={sx(t)} x2={sx(t)} y1={VH-PAD.b} y2={VH-PAD.b+5} stroke="#6b7280" strokeWidth="1"/>
+                        <text x={sx(t)} y={VH-PAD.b+18} textAnchor="middle" fontSize="11" fill="#6b7280">{fmt(t)}</text>
+                      </g>
+                    ))}
+                    {/* Y tick labels */}
+                    {yTicks.map(t => (
+                      <g key={t}>
+                        <line x1={PAD.l-5} x2={PAD.l} y1={sy(t)} y2={sy(t)} stroke="#6b7280" strokeWidth="1"/>
+                        <text x={PAD.l-8} y={sy(t)+4} textAnchor="end" fontSize="11" fill="#6b7280">{fmt(t)}</text>
+                      </g>
+                    ))}
+                    {/* Axis labels */}
+                    <text x={PAD.l + iW/2} y={VH-6} textAnchor="middle" fontSize="12" fill="#374151" fontWeight="600">{xInd}</text>
+                    <text x={14} y={PAD.t + iH/2} textAnchor="middle" fontSize="12" fill="#374151" fontWeight="600"
+                      transform={`rotate(-90,14,${PAD.t+iH/2})`}>{yInd}</text>
+                    {/* Normal dots */}
+                    {normalPts.map(p => (
+                      <circle key={p.code} cx={sx(p.x)} cy={sy(p.y)} r="5"
+                        fill={getColor(p)} fillOpacity="0.78" stroke="white" strokeWidth="0.5"
+                        style={{cursor:'pointer'}}
+                        onMouseEnter={e => handleMouseEnter(e, p)}/>
+                    ))}
+                    {/* Highlighted dot */}
+                    {hlPt && (
+                      <g>
+                        <circle cx={sx(hlPt.x)} cy={sy(hlPt.y)} r="9"
+                          fill={getColor(hlPt)} stroke="white" strokeWidth="2.5"
+                          style={{cursor:'pointer'}}
+                          onMouseEnter={e => handleMouseEnter(e, hlPt)}/>
+                        <text x={sx(hlPt.x)} y={sy(hlPt.y)-14} textAnchor="middle"
+                          fontSize="12" fontWeight="700" fill="#1e293b"
+                          stroke="white" strokeWidth="3" paintOrder="stroke">{hlPt.name}</text>
+                      </g>
+                    )}
+                  </svg>
+                  {/* Tooltip */}
+                  {tooltip && (
+                    <div style={{left: tooltip.x+14, top: tooltip.y-10, pointerEvents:'none'}}
+                      className="absolute bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2 text-xs z-10 min-w-max">
+                      <p className="font-bold text-gray-800">{tooltip.point.name} <span className="font-normal text-gray-400">({tooltip.point.code})</span></p>
+                      <p className="text-gray-500 mb-1">
+                        {tooltip.point.rating && <span className="font-semibold text-blue-700 mr-1">S&P {tooltip.point.rating}</span>}
+                        {tooltip.point.continent}
+                      </p>
+                      <p><span className="text-gray-400">x  </span><span className="font-semibold">{fmt(tooltip.point.x)}</span></p>
+                      <p><span className="text-gray-400">y  </span><span className="font-semibold">{fmt(tooltip.point.y)}</span></p>
+                    </div>
+                  )}
+                </div>
+                {/* Legend */}
+                <div className="flex flex-wrap gap-3 justify-center mt-3 pt-3 border-t border-gray-100">
+                  {legendEntries.map(([lbl, color]) => (
+                    <div key={lbl} className="flex items-center gap-1.5 text-xs text-gray-600">
+                      <span className="inline-block w-3 h-3 rounded-full flex-shrink-0" style={{background: color}}/>
+                      {lbl}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-center text-xs text-gray-400 mt-2">
+                  {points.length} countries · {currentYear} · Source: IMF {weoReleaseLabel} WEO
+                </p>
+              </div>
+            </div>
+          );
+        };
+
         // ── Root app ────────────────────────────────────────────────────────
         const App = () => {
           const [tab, setTab] = useState('countries');
@@ -13699,7 +13924,7 @@
                 </div>
 
                 <div className="flex justify-center gap-2 mb-6">
-                  {[['countries', 'Countries'], ['compare', 'Compare']].map(([key, label]) => (
+                  {[['countries', 'Countries'], ['compare', 'Compare'], ['graph', 'Graph']].map(([key, label]) => (
                     <button
                       key={key}
                       onClick={() => setTab(key)}
@@ -13712,7 +13937,9 @@
                   ))}
                 </div>
 
-                {tab === 'compare' ? (
+                {tab === 'graph' ? (
+                  <ScatterView />
+                ) : tab === 'compare' ? (
                   <CompareView />
                 ) : (
                   <>
