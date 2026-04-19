@@ -13669,6 +13669,7 @@
           const [colorMode, setColorMode] = useState('rating');
           const periods = [{key: currentYear, label: currentYear}, {key: '10yr_Median', label: '10yr Avg'}, {key: '2019', label: '2019'}];
           const [hidden, setHidden] = useState(new Set());
+          const [trimOutliers, setTrimOutliers] = useState(false);
           const [highlightCode, setHighlightCode] = useState('');
           const [tooltip, setTooltip] = useState(null);
           const chartRef = useRef(null);
@@ -13721,8 +13722,22 @@
           const catKey = p => colorMode === 'rating' ? p.bucket : p.continent;
           const isVisible = p => !hidden.has(catKey(p));
 
-          // Visible points drive the scale so axis auto-adjusts when categories are toggled
-          const visiblePoints = useMemo(() => points.filter(isVisible), [points, hidden, colorMode]);
+          const iqrBounds = (vals) => {
+            const s = [...vals].sort((a, b) => a - b);
+            const q1 = s[Math.floor(s.length * 0.25)];
+            const q3 = s[Math.floor(s.length * 0.75)];
+            const iqr = q3 - q1;
+            return [q1 - 1.5 * iqr, q3 + 1.5 * iqr];
+          };
+
+          // Visible points drive the scale so axis auto-adjusts when categories or outlier toggle changes
+          const visiblePoints = useMemo(() => {
+            const base = points.filter(isVisible);
+            if (!trimOutliers || base.length < 4) return base;
+            const [xLo, xHi] = iqrBounds(base.map(p => p.x));
+            const [yLo, yHi] = iqrBounds(base.map(p => p.y));
+            return base.filter(p => p.x >= xLo && p.x <= xHi && p.y >= yLo && p.y <= yHi);
+          }, [points, hidden, colorMode, trimOutliers]);
 
           const [xTicks, yTicks, xMin, xMax, yMin, yMax] = useMemo(() => {
             if (!visiblePoints.length) return [[], [], 0, 1, 0, 1];
@@ -13794,15 +13809,28 @@
                     ))}
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Color by</label>
-                  <div className="flex gap-2">
-                    {[['rating','Credit Rating'],['region','Region']].map(([m, lbl]) => (
-                      <button key={m} onClick={() => setColorMode(m)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                          colorMode === m ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-indigo-50'
-                        }`}>{lbl}</button>
-                    ))}
+                <div className="flex gap-4 items-start">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Color by</label>
+                    <div className="flex gap-2">
+                      {[['rating','Credit Rating'],['region','Region']].map(([m, lbl]) => (
+                        <button key={m} onClick={() => setColorMode(m)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                            colorMode === m ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-indigo-50'
+                          }`}>{lbl}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Outliers</label>
+                    <button onClick={() => setTrimOutliers(v => !v)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
+                        trimOutliers
+                          ? 'bg-rose-600 text-white border-rose-600'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-rose-50'
+                      }`}>
+                      {trimOutliers ? '✕ Hiding outliers' : 'Hide outliers'}
+                    </button>
                   </div>
                 </div>
                 <div>
