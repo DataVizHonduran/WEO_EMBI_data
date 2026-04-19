@@ -467,6 +467,7 @@ html_template = """<!DOCTYPE html>
           const [filterMode,      setFilterMode]      = useState('region');
           const [continentFilter, setContinentFilter] = useState('All');
           const [ratingFilter,    setRatingFilter]    = useState('All');
+          const [showRatingAvg,   setShowRatingAvg]   = useState(false);
 
           const periods   = [
             { key: currentYear,   label: currentYear },
@@ -494,8 +495,30 @@ html_template = """<!DOCTYPE html>
               .sort((a, b) => b.value - a.value);
           }, [indicator, period, filterMode, continentFilter, ratingFilter]);
 
-          const maxAbs     = useMemo(() => Math.max(...rows.map(r => Math.abs(r.value)), 1), [rows]);
-          const hasNegative = rows.some(r => r.value < 0);
+          // Per-bucket averages computed from the FULL universe (not filtered rows)
+          const ratingAverages = useMemo(() => {
+            if (!showRatingAvg) return [];
+            return Object.entries(ratingGroups).map(([bucket, codes]) => {
+              const vals = codes
+                .map(c => countryMetrics[c]?.[indicator]?.[period] ?? null)
+                .filter(v => v !== null);
+              if (vals.length === 0) return null;
+              const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+              return { bucket, avg, count: vals.length };
+            }).filter(Boolean);
+          }, [showRatingAvg, indicator, period]);
+
+          const maxAbs = useMemo(() => {
+            const allVals = [
+              ...rows.map(r => Math.abs(r.value)),
+              ...(showRatingAvg ? ratingAverages.map(a => Math.abs(a.avg)) : []),
+              1,
+            ];
+            return Math.max(...allVals);
+          }, [rows, ratingAverages, showRatingAvg]);
+
+          const hasNegative = rows.some(r => r.value < 0) ||
+            (showRatingAvg && ratingAverages.some(a => a.avg < 0));
           const showMedian  = period === currentYear;
 
           // Convert a data value to a percentage position within the bar track
@@ -551,23 +574,37 @@ html_template = """<!DOCTYPE html>
                   </div>
                 </div>
 
-                {/* Context-sensitive bucket buttons */}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-                    {filterMode === 'region' ? 'Region' : 'Rating Tier'}
-                  </label>
-                  <div className="flex gap-2 flex-wrap">
-                    {(filterMode === 'region' ? continents : ratingBuckets).map(opt => (
-                      <button key={opt}
-                        onClick={() => filterMode === 'region' ? setContinentFilter(opt) : setRatingFilter(opt)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                          (filterMode === 'region' ? continentFilter : ratingFilter) === opt
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-blue-100'
-                        }`}>
-                        {opt}
-                      </button>
-                    ))}
+                {/* Context-sensitive bucket buttons + rating avg toggle */}
+                <div className="flex flex-wrap gap-4 items-end">
+                  <div className="flex-1 min-w-0">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                      {filterMode === 'region' ? 'Region' : 'Rating Tier'}
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {(filterMode === 'region' ? continents : ratingBuckets).map(opt => (
+                        <button key={opt}
+                          onClick={() => filterMode === 'region' ? setContinentFilter(opt) : setRatingFilter(opt)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                            (filterMode === 'region' ? continentFilter : ratingFilter) === opt
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-blue-100'
+                          }`}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Rating Averages</label>
+                    <button
+                      onClick={() => setShowRatingAvg(v => !v)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
+                        showRatingAvg
+                          ? 'bg-teal-600 text-white border-teal-600'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-teal-50'
+                      }`}>
+                      {showRatingAvg ? '✓ Shown' : 'Show'}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -655,6 +692,71 @@ html_template = """<!DOCTYPE html>
                       </div>
                     );
                   })}
+
+                  {/* Rating average rows */}
+                  {showRatingAvg && ratingAverages.length > 0 && (
+                    <>
+                      <div className="border-t-2 border-gray-200 mt-3 mb-2" />
+                      {ratingAverages.map(({ bucket, avg, count }) => {
+                        const absPct  = valToPct(avg);
+                        const positive = avg >= 0;
+                        const bucketColor = {
+                          'Investment Grade': 'bg-emerald-500',
+                          'BB':              'bg-amber-400',
+                          'B':               'bg-orange-500',
+                          'CCC & Below':     'bg-red-600',
+                        }[bucket] || 'bg-gray-400';
+                        const textColor = {
+                          'Investment Grade': 'text-emerald-700',
+                          'BB':              'text-amber-700',
+                          'B':               'text-orange-700',
+                          'CCC & Below':     'text-red-700',
+                        }[bucket] || 'text-gray-700';
+
+                        if (hasNegative) {
+                          return (
+                            <div key={bucket} className="flex items-center gap-2">
+                              <div className={`w-36 text-right text-xs font-bold ${textColor}`}>
+                                {bucket} avg
+                                <span className="ml-1 font-normal text-gray-400">n={count}</span>
+                              </div>
+                              <div className="flex-1 flex items-center h-6">
+                                <div className="w-1/2 flex justify-end">
+                                  {!positive && (
+                                    <div style={{ width: `${absPct}%` }} className={`h-5 ${bucketColor} opacity-80 rounded-l`} />
+                                  )}
+                                </div>
+                                <div className="w-px h-5 bg-gray-400 mx-0.5 flex-shrink-0" />
+                                <div className="w-1/2 flex justify-start">
+                                  {positive && (
+                                    <div style={{ width: `${absPct}%` }} className={`h-5 ${bucketColor} opacity-80 rounded-r`} />
+                                  )}
+                                </div>
+                              </div>
+                              <div className={`w-14 text-xs font-bold text-right ${textColor}`}>
+                                {avg.toFixed(1)}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div key={bucket} className="flex items-center gap-2">
+                            <div className={`w-36 text-right text-xs font-bold ${textColor}`}>
+                              {bucket} avg
+                              <span className="ml-1 font-normal text-gray-400">n={count}</span>
+                            </div>
+                            <div className="flex-1 relative h-5">
+                              <div style={{ width: `${absPct}%` }} className={`h-5 ${bucketColor} opacity-80 rounded-r`} />
+                            </div>
+                            <div className={`w-14 text-xs font-bold text-right ${textColor}`}>
+                              {avg.toFixed(1)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
                 <div className="mt-6 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
                   Source: IMF World Economic Outlook Database · {weoReleaseLabel} WEO
