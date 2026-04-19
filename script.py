@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 from io import StringIO
 import weo
+import wbgapi as wb
 from datetime import datetime
 import json
 import os
@@ -285,6 +286,17 @@ var_dict = {
     'TM_RPCH': 'Import volume growth (%)',
 }
 
+WB_SERIES = {
+    'GC.XPN.INTP.RV.ZS': 'Interest payments (% revenue)',
+    'DT.DOD.DECT.GN.ZS':  'External debt (% GNI)',
+    'DT.DOD.DSTC.ZS':     'Short-term debt (% external debt)',
+    'DT.TDS.DECT.EX.ZS':  'Debt service (% exports)',
+    'FI.RES.TOTL.MO':     'Reserves (months of imports)',
+    'FI.RES.TOTL.DT.ZS':  'Reserves (% external debt)',
+}
+WB_SERIES_YEARS = list(range(2000, 2025))
+WB_NO_DATA = {'TWN'}   # not in World Bank universe
+
 current_year_data = {}
 median_10yr_data = {}
 data_2019 = {}
@@ -309,6 +321,41 @@ def get_year_data(series_data, target_year):
         closest = min(numeric_years, key=lambda x: abs(x - target_year))
         return series_data.iloc[index_years.index(closest)].sort_values(), closest
     return series_data.iloc[-1].sort_values(), "last_available"
+
+
+def fetch_wb_data(iso_list):
+    """Fetch WB IDS/WDI series for all target countries.
+    Returns {iso3: {display_name: {str(year): value_or_None}}}
+    """
+    countries = [c for c in iso_list if c not in WB_NO_DATA]
+    result = {iso: {} for iso in countries}
+    try:
+        df = wb.data.DataFrame(
+            list(WB_SERIES.keys()), countries,
+            time=range(2000, 2025), skipBlanks=False
+        )
+        # wbgapi MultiIndex is (economy, series); cols are YR2000..YR2024
+        for wb_code, display_name in WB_SERIES.items():
+            if wb_code not in df.index.get_level_values('series'):
+                continue
+            series_df = df.xs(wb_code, level='series').copy()  # rows=economy, cols=YR20xx
+            series_df = series_df.ffill(axis=1)
+            for iso in countries:
+                if iso not in series_df.index:
+                    result[iso][display_name] = {str(yr): None for yr in WB_SERIES_YEARS}
+                    continue
+                row = series_df.loc[iso]
+                s = {}
+                for yr in WB_SERIES_YEARS:
+                    col = f'YR{yr}'
+                    val = row.get(col)
+                    s[str(yr)] = round(float(val), 2) if pd.notna(val) else None
+                result[iso][display_name] = s
+
+        print(f"✓ WB data fetched for {len(countries)} countries")
+    except Exception as e:
+        print(f"⚠ WB data fetch failed: {e}")
+    return result
 
 
 print("\nCollecting data for variables...")
@@ -434,6 +481,30 @@ for var, display_name in var_dict.items():
         country_metrics_json[iso][display_name]['series'] = s
 print("✓ Time series data attached")
 
+# Merge World Bank IDS/WDI data
+print("\nFetching World Bank data...")
+wb_data = fetch_wb_data(target_countries)
+wb_merged = 0
+for iso, wb_indicators in wb_data.items():
+    if iso not in country_metrics_json:
+        continue
+    for display_name, series_dict in wb_indicators.items():
+        vals_by_year = {int(k): v for k, v in series_dict.items() if v is not None}
+        if not vals_by_year:
+            continue
+        latest_val = vals_by_year.get(max(vals_by_year))
+        val_2019   = vals_by_year.get(2019)
+        med_vals   = [v for y, v in vals_by_year.items() if current_year - 10 <= y <= current_year]
+        med_val    = float(pd.Series(med_vals).median()) if med_vals else None
+        country_metrics_json[iso][display_name] = {
+            current_year_str: latest_val,
+            '2019':           val_2019,
+            '10yr_Median':    med_val,
+            'series':         series_dict,
+        }
+        wb_merged += 1
+print(f"✓ WB data merged: {wb_merged} country-indicator pairs")
+
 # Build region-grouped country data for JS (only countries with WEO data)
 region_order = ['Africa', 'Americas', 'Asia-Pacific', 'Europe', 'Middle East']
 country_data_by_region = {r: {} for r in region_order}
@@ -505,6 +576,12 @@ html_template = """<!DOCTYPE html>
           'GDP per capita (USD)',
           'GDP per capita, PPP (intl $)',
           'Population',
+          'Interest payments (% revenue)',
+          'External debt (% GNI)',
+          'Short-term debt (% external debt)',
+          'Debt service (% exports)',
+          'Reserves (months of imports)',
+          'Reserves (% external debt)',
         ];
 
         const TrendingUp = () => (
@@ -609,6 +686,14 @@ html_template = """<!DOCTYPE html>
             'General government revenue (% of GDP)', 'General government expenditure (% of GDP)',
             'Fiscal balance (% of GDP)', 'Structural fiscal balance (% potential GDP)',
             'Primary balance (% of GDP)', 'Gross debt (% of GDP)', 'Net debt (% of GDP)',
+          ]},
+          { heading: 'Debt Cost & External', indicators: [
+            'Interest payments (% revenue)',
+            'External debt (% GNI)',
+            'Short-term debt (% external debt)',
+            'Debt service (% exports)',
+            'Reserves (months of imports)',
+            'Reserves (% external debt)',
           ]},
         ];
 
@@ -744,7 +829,7 @@ html_template = """<!DOCTYPE html>
                 })}
               </div>
               <p className="mt-5 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
-                Click any row to see historical chart · Source: IMF {weoReleaseLabel} WEO
+                Click any row to see historical chart · IMF {weoReleaseLabel} WEO · World Bank IDS/WDI (latest ≤ 2024)
               </p>
             </div>
           );
