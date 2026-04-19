@@ -13,7 +13,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo, useRef } = React;
+        const { useState, useMemo, useRef, useEffect } = React;
 
         const countryMetrics  = {
   "AGO": {
@@ -13665,9 +13665,18 @@
           const [xInd, setXInd] = useState('GDP per capita (USD)');
           const [yInd, setYInd] = useState('Gross debt (% of GDP)');
           const [colorMode, setColorMode] = useState('rating');
+          const [hidden, setHidden] = useState(new Set());
           const [highlightCode, setHighlightCode] = useState('');
           const [tooltip, setTooltip] = useState(null);
           const chartRef = useRef(null);
+
+          useEffect(() => { setHidden(new Set()); }, [colorMode]);
+
+          const toggleCategory = cat => setHidden(prev => {
+            const next = new Set(prev);
+            next.has(cat) ? next.delete(cat) : next.add(cat);
+            return next;
+          });
 
           const VW = 800, VH = 460;
           const PAD = { l: 72, r: 24, t: 24, b: 62 };
@@ -13733,7 +13742,9 @@
             setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, point });
           };
 
-          const normalPts = points.filter(p => p.code !== highlightCode);
+          const catKey = p => colorMode === 'rating' ? p.bucket : p.continent;
+          const isVisible = p => !hidden.has(catKey(p));
+          const normalPts = points.filter(p => p.code !== highlightCode && isVisible(p));
           const hlPt = highlightCode ? points.find(p => p.code === highlightCode) : null;
 
           return (
@@ -13852,17 +13863,24 @@
                     </div>
                   )}
                 </div>
-                {/* Legend */}
-                <div className="flex flex-wrap gap-3 justify-center mt-3 pt-3 border-t border-gray-100">
-                  {legendEntries.map(([lbl, color]) => (
-                    <div key={lbl} className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <span className="inline-block w-3 h-3 rounded-full flex-shrink-0" style={{background: color}}/>
-                      {lbl}
-                    </div>
-                  ))}
+                {/* Legend — click to toggle */}
+                <div className="flex flex-wrap gap-2 justify-center mt-3 pt-3 border-t border-gray-100">
+                  {legendEntries.map(([lbl, color]) => {
+                    const off = hidden.has(lbl);
+                    return (
+                      <button key={lbl} onClick={() => toggleCategory(lbl)}
+                        className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border transition ${
+                          off ? 'border-gray-200 text-gray-300 bg-gray-50' : 'border-gray-200 text-gray-600 bg-white hover:bg-gray-50'
+                        }`}>
+                        <span className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                          style={{background: off ? '#e5e7eb' : color}}/>
+                        <span className={off ? 'line-through' : ''}>{lbl}</span>
+                      </button>
+                    );
+                  })}
                 </div>
                 <p className="text-center text-xs text-gray-400 mt-2">
-                  {points.length} countries · {currentYear} · Source: IMF {weoReleaseLabel} WEO
+                  {normalPts.length + (hlPt && isVisible(hlPt) ? 1 : 0)} of {points.length} countries shown · {currentYear} · Source: IMF {weoReleaseLabel} WEO
                 </p>
               </div>
             </div>
