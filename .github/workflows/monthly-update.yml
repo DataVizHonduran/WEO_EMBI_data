@@ -55,14 +55,14 @@ jobs:
         
     - name: Commit and push if changes
       run: |
+        # Pull latest changes before staging to avoid rebase-with-unstaged-changes error
+        git pull origin main --rebase
+
         git add index.html weo.csv
         if git diff --staged --quiet; then
           echo "No changes to commit - files are up to date"
           exit 0
         fi
-        
-        # Pull latest changes to avoid conflicts
-        git pull origin main --rebase
         
         # Commit the changes
         git commit -m "Update dashboard data - $(date +'%Y-%m-%d %H:%M:%S UTC')"
