@@ -293,6 +293,16 @@ WB_SERIES = {
     'DT.TDS.DECT.EX.ZS':  'Debt service (% exports)',
     'FI.RES.TOTL.MO':     'Reserves (months of imports)',
     'FI.RES.TOTL.DT.ZS':  'Reserves (% external debt)',
+    'DT.DOD.DSTC.IR.ZS':  'Short-term debt (% reserves)',
+    'SP.POP.DPND':        'Age dependency ratio (%)',
+}
+WGI_SERIES = {
+    'GOV_WGI_RL.EST': 'Rule of Law',
+    'GOV_WGI_CC.EST': 'Control of Corruption',
+    'GOV_WGI_PV.EST': 'Political Stability',
+    'GOV_WGI_GE.EST': 'Government Effectiveness',
+    'GOV_WGI_RQ.EST': 'Regulatory Quality',
+    'GOV_WGI_VA.EST': 'Voice and Accountability',
 }
 WB_SERIES_YEARS = list(range(2000, 2025))
 WB_NO_DATA = {'TWN'}   # not in World Bank universe
@@ -355,6 +365,47 @@ def fetch_wb_data(iso_list):
         print(f"✓ WB data fetched for {len(countries)} countries")
     except Exception as e:
         print(f"⚠ WB data fetch failed: {e}")
+
+    # WGI (DB3) — governance indicators, batched to avoid URL length limits
+    orig_db = wb.db
+    try:
+        wb.db = 3
+        BATCH = 40
+        wgi_frames = []
+        for i in range(0, len(countries), BATCH):
+            batch = countries[i:i + BATCH]
+            try:
+                df_b = wb.data.DataFrame(
+                    list(WGI_SERIES.keys()), batch,
+                    time=list(range(2000, 2025)), skipBlanks=False
+                )
+                wgi_frames.append(df_b)
+            except Exception as be:
+                print(f"  ⚠ WGI batch {i//BATCH+1} failed: {be}")
+        if wgi_frames:
+            wgi_df = pd.concat(wgi_frames)
+            for wb_code, display_name in WGI_SERIES.items():
+                if wb_code not in wgi_df.index.get_level_values('series'):
+                    continue
+                series_df = wgi_df.xs(wb_code, level='series').copy()
+                series_df = series_df.ffill(axis=1)
+                for iso in countries:
+                    if iso not in series_df.index:
+                        result[iso][display_name] = {str(yr): None for yr in WB_SERIES_YEARS}
+                        continue
+                    row = series_df.loc[iso]
+                    s = {}
+                    for yr in WB_SERIES_YEARS:
+                        col = f'YR{yr}'
+                        val = row.get(col)
+                        s[str(yr)] = round(float(val), 3) if pd.notna(val) else None
+                    result[iso][display_name] = s
+            print(f"✓ WGI data fetched ({len(wgi_frames)} batches)")
+    except Exception as e:
+        print(f"⚠ WGI fetch failed: {e}")
+    finally:
+        wb.db = orig_db
+
     return result
 
 
@@ -505,6 +556,70 @@ for iso, wb_indicators in wb_data.items():
         wb_merged += 1
 print(f"✓ WB data merged: {wb_merged} country-indicator pairs")
 
+# ── Derived indicators ───────────────────────────────────────────────────────
+SERIES_YEARS_STR = [str(y) for y in SERIES_YEARS]
+WB_YEARS_STR     = [str(y) for y in WB_SERIES_YEARS]
+
+def _make_entry(series_dict, yr_keys):
+    vals = {int(k): v for k, v in series_dict.items() if v is not None}
+    if not vals:
+        return None
+    med_vals = [v for y, v in vals.items() if current_year - 10 <= y <= current_year]
+    return {
+        current_year_str: vals.get(current_year),
+        '2019':           vals.get(2019),
+        '10yr_Median':    float(pd.Series(med_vals).median()) if med_vals else None,
+        'series':         {k: series_dict.get(k) for k in yr_keys},
+    }
+
+for iso, metrics in country_metrics_json.items():
+    # 1. Interest payments (% GDP) = primary balance − fiscal balance (WEO series, full years)
+    pb_s = metrics.get('Primary balance (% of GDP)', {}).get('series', {})
+    fb_s = metrics.get('Fiscal balance (% of GDP)', {}).get('series', {})
+    if pb_s and fb_s:
+        s = {}
+        for yr_str in SERIES_YEARS_STR:
+            pb, fb = pb_s.get(yr_str), fb_s.get(yr_str)
+            s[yr_str] = round(pb - fb, 2) if pb is not None and fb is not None else None
+        entry = _make_entry(s, SERIES_YEARS_STR)
+        if entry:
+            metrics['Interest payments (% GDP)'] = entry
+
+    # 2. GFN proxy (% GDP) = −fiscal balance + short-term external debt % GDP
+    #    For years with WB data: adds ST ext debt rollover estimate; else just the deficit.
+    st_s  = metrics.get('Short-term debt (% external debt)', {}).get('series', {})
+    ext_s = metrics.get('External debt (% GNI)', {}).get('series', {})
+    gfn_s = {}
+    for yr_str in SERIES_YEARS_STR:
+        fb_v  = fb_s.get(yr_str)
+        st_v  = st_s.get(yr_str)  if st_s  else None
+        ext_v = ext_s.get(yr_str) if ext_s else None
+        if fb_v is None:
+            gfn_s[yr_str] = None
+        elif st_v is not None and ext_v is not None:
+            gfn_s[yr_str] = round(-fb_v + st_v * ext_v / 100, 2)
+        else:
+            gfn_s[yr_str] = round(-fb_v, 2)
+    entry = _make_entry(gfn_s, SERIES_YEARS_STR)
+    if entry:
+        metrics['GFN proxy (% GDP)'] = entry
+
+    # 3. Local currency debt (% total) = (gross debt − ext debt) / gross debt
+    gd_s  = metrics.get('Gross debt (% of GDP)', {}).get('series', {})
+    lcd_s = {}
+    for yr_str in WB_YEARS_STR:
+        gd_v  = gd_s.get(yr_str)  if gd_s  else None
+        ext_v = ext_s.get(yr_str) if ext_s else None
+        if gd_v is not None and ext_v is not None and gd_v > 0:
+            lcd_s[yr_str] = round(max(0.0, (gd_v - ext_v) / gd_v * 100), 1)
+        else:
+            lcd_s[yr_str] = None
+    entry = _make_entry(lcd_s, WB_YEARS_STR)
+    if entry:
+        metrics['Local currency debt (% total)'] = entry
+
+print("✓ Derived indicators computed")
+
 # Build region-grouped country data for JS (only countries with WEO data)
 region_order = ['Africa', 'Americas', 'Asia-Pacific', 'Europe', 'Middle East']
 country_data_by_region = {r: {} for r in region_order}
@@ -546,6 +661,7 @@ html_template = """<!DOCTYPE html>
         const countryMetrics  = COUNTRY_DATA_PLACEHOLDER;
         const currentYear     = "CURRENT_YEAR_PLACEHOLDER";
         const weoReleaseLabel = "WEO_RELEASE_PLACEHOLDER";
+        const wbFetchDate     = "WB_FETCH_DATE_PLACEHOLDER";
         const ratingGroups    = RATING_GROUPS_PLACEHOLDER;
         const countryRatings  = COUNTRY_RATINGS_PLACEHOLDER;
         const countryData     = COUNTRY_DATA_BY_REGION_PLACEHOLDER;
@@ -582,6 +698,17 @@ html_template = """<!DOCTYPE html>
           'Debt service (% exports)',
           'Reserves (months of imports)',
           'Reserves (% external debt)',
+          'Short-term debt (% reserves)',
+          'Local currency debt (% total)',
+          'Interest payments (% GDP)',
+          'GFN proxy (% GDP)',
+          'Rule of Law',
+          'Control of Corruption',
+          'Political Stability',
+          'Government Effectiveness',
+          'Regulatory Quality',
+          'Voice and Accountability',
+          'Age dependency ratio (%)',
         ];
 
         const TrendingUp = () => (
@@ -686,6 +813,7 @@ html_template = """<!DOCTYPE html>
             'General government revenue (% of GDP)', 'General government expenditure (% of GDP)',
             'Fiscal balance (% of GDP)', 'Structural fiscal balance (% potential GDP)',
             'Primary balance (% of GDP)', 'Gross debt (% of GDP)', 'Net debt (% of GDP)',
+            'Interest payments (% GDP)', 'GFN proxy (% GDP)',
           ]},
           { heading: 'Debt Cost & External', indicators: [
             'Interest payments (% revenue)',
@@ -694,6 +822,17 @@ html_template = """<!DOCTYPE html>
             'Debt service (% exports)',
             'Reserves (months of imports)',
             'Reserves (% external debt)',
+            'Short-term debt (% reserves)',
+            'Local currency debt (% total)',
+          ]},
+          { heading: 'Governance & Demographics', indicators: [
+            'Rule of Law',
+            'Control of Corruption',
+            'Political Stability',
+            'Government Effectiveness',
+            'Regulatory Quality',
+            'Voice and Accountability',
+            'Age dependency ratio (%)',
           ]},
         ];
 
@@ -1777,9 +1916,17 @@ html_template = """<!DOCTYPE html>
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-5">
                   <h1 className="text-4xl font-bold text-gray-800 mb-2">Sovereign Dashboard</h1>
-                  <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
-                    Data: IMF {weoReleaseLabel} WEO · S&P Ratings
-                  </span>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+                      IMF {weoReleaseLabel} WEO
+                    </span>
+                    <span className="inline-block bg-teal-100 text-teal-800 text-xs font-semibold px-3 py-1 rounded-full">
+                      World Bank fetched {wbFetchDate}
+                    </span>
+                    <span className="inline-block bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">
+                      S&P Ratings
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex justify-center gap-2 mb-6">
@@ -1862,10 +2009,13 @@ html_template = """<!DOCTYPE html>
 </body>
 </html>"""
 
+wb_fetch_date = datetime.utcnow().strftime('%Y-%m-%d')
+
 html_content = (html_template
     .replace('COUNTRY_DATA_PLACEHOLDER',            json.dumps(country_metrics_json, indent=2))
     .replace('CURRENT_YEAR_PLACEHOLDER',            current_year_str)
     .replace('WEO_RELEASE_PLACEHOLDER',             weo_release_label)
+    .replace('WB_FETCH_DATE_PLACEHOLDER',           wb_fetch_date)
     .replace('RATING_GROUPS_PLACEHOLDER',           json.dumps(rating_groups))
     .replace('COUNTRY_RATINGS_PLACEHOLDER',         json.dumps(country_ratings))
     .replace('COUNTRY_DATA_BY_REGION_PLACEHOLDER',  json.dumps(country_data_by_region)))
