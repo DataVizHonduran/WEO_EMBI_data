@@ -1528,15 +1528,22 @@ html_template = """<!DOCTYPE html>
                       </div>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="text-xs border-collapse" style={{tableLayout:'fixed'}}>
+                      <table className="text-xs border-collapse"
+                        style={{tableLayout:'fixed', width: ROW_W + CELL * indicators.length}}>
                         <thead>
                           <tr>
-                            <th style={{width:ROW_W, minWidth:ROW_W}}></th>
+                            <th style={{width:ROW_W, minWidth:ROW_W, maxWidth:ROW_W}}></th>
                             {indicators.map((ind, j) => (
-                              <th key={j} style={{width:CELL, minWidth:CELL, height:110, verticalAlign:'bottom', padding:0}}>
+                              <th key={j} style={{
+                                width:CELL, minWidth:CELL, maxWidth:CELL,
+                                height:130, verticalAlign:'bottom', padding:0, overflow:'hidden'
+                              }}>
                                 <div style={{
-                                  transform:'rotate(-60deg) translateX(-6px)', transformOrigin:'bottom left',
-                                  whiteSpace:'nowrap', fontSize:10, color:'#4b5563', fontWeight:500, lineHeight:1.2
+                                  writingMode:'vertical-rl',
+                                  transform:'rotate(180deg)',
+                                  whiteSpace:'nowrap', fontSize:10, color:'#4b5563', fontWeight:500,
+                                  overflow:'hidden', textOverflow:'ellipsis',
+                                  maxHeight:128, display:'block'
                                 }}>{shortLbl(ind)}</div>
                               </th>
                             ))}
