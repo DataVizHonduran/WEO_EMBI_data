@@ -13230,6 +13230,20 @@
             </svg>
         );
 
+        const cardGroups = [
+          { heading: 'Size & Wealth', indicators: ['GDP (US Dollars)', 'GDP per capita (USD)', 'GDP per capita, PPP (intl $)', 'Population'] },
+          { heading: 'Growth & Cycle', indicators: ['Real GDP growth (%)', 'Output gap (% potential GDP)'] },
+          { heading: 'Labor', indicators: ['Unemployment rate (%)'] },
+          { heading: 'Inflation', indicators: ['Inflation, avg CPI (%)', 'Inflation, end-of-period (%)'] },
+          { heading: 'External', indicators: ['Current account balance (% of GDP)', 'Export volume growth (%)', 'Import volume growth (%)'] },
+          { heading: 'Investment & Savings', indicators: ['Total investment (% of GDP)', 'National savings (% of GDP)'] },
+          { heading: 'Fiscal', indicators: [
+            'General government revenue (% of GDP)', 'General government expenditure (% of GDP)',
+            'Fiscal balance (% of GDP)', 'Structural fiscal balance (% potential GDP)',
+            'Primary balance (% of GDP)', 'Gross debt (% of GDP)', 'Net debt (% of GDP)',
+          ]},
+        ];
+
         // ── Country detail card ─────────────────────────────────────────────
         const CountryCard = ({ countryCode, countryName, metrics }) => {
           if (!metrics) {
@@ -13307,9 +13321,20 @@
                 <div className="text-right font-bold text-purple-700">Peer Avg</div>
               </div>
               <div className="space-y-0">
-                {Object.entries(metrics).map(([key, value]) => (
-                  <MetricRow key={key} label={key} data={value} peerAvg={peerAverages[key] ?? null} />
-                ))}
+                {cardGroups.map(({ heading, indicators: groupInds }) => {
+                  const rows = groupInds.filter(ind => metrics[ind] != null);
+                  if (rows.length === 0) return null;
+                  return (
+                    <div key={heading}>
+                      <div className="mt-4 mb-1 px-1 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-200 pb-1">
+                        {heading}
+                      </div>
+                      {rows.map(ind => (
+                        <MetricRow key={ind} label={ind} data={metrics[ind]} peerAvg={peerAverages[ind] ?? null} />
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
               <div className="mt-6 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
                 Source: IMF World Economic Outlook Database · {weoReleaseLabel} WEO
