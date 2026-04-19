@@ -123,7 +123,8 @@ RATINGS_NUMERIC = {
 
 def rating_to_bucket(rating_str):
     n = RATINGS_NUMERIC.get(rating_str, 99)
-    if n <= 10: return 'Investment Grade'
+    if n <= 7:  return 'A & Above'
+    if n <= 10: return 'BBB'
     if n <= 13: return 'BB'
     if n <= 16: return 'B'
     return 'CCC & Below'
@@ -405,7 +406,7 @@ for iso in sorted(country_metrics_json.keys()):
 country_data_by_region = {r: v for r, v in country_data_by_region.items() if v}
 
 # Build rating groups
-rating_groups_ordered = ['Investment Grade', 'BB', 'B', 'CCC & Below']
+rating_groups_ordered = ['A & Above', 'BBB', 'BB', 'B', 'CCC & Below']
 rating_groups = {k: [] for k in rating_groups_ordered}
 for iso, rating in country_ratings.items():
     if iso in country_metrics_json:
@@ -770,16 +771,18 @@ html_template = """<!DOCTYPE html>
                         const absPct  = valToPct(avg);
                         const positive = avg >= 0;
                         const bucketColor = {
-                          'Investment Grade': 'bg-emerald-500',
-                          'BB':              'bg-amber-400',
-                          'B':               'bg-orange-500',
-                          'CCC & Below':     'bg-red-600',
+                          'A & Above':   'bg-emerald-600',
+                          'BBB':         'bg-emerald-400',
+                          'BB':          'bg-amber-400',
+                          'B':           'bg-orange-500',
+                          'CCC & Below': 'bg-red-600',
                         }[bucket] || 'bg-gray-400';
                         const textColor = {
-                          'Investment Grade': 'text-emerald-700',
-                          'BB':              'text-amber-700',
-                          'B':               'text-orange-700',
-                          'CCC & Below':     'text-red-700',
+                          'A & Above':   'text-emerald-800',
+                          'BBB':         'text-emerald-600',
+                          'BB':          'text-amber-700',
+                          'B':           'text-orange-700',
+                          'CCC & Below': 'text-red-700',
                         }[bucket] || 'text-gray-700';
 
                         if (hasNegative) {
