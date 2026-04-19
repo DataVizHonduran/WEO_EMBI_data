@@ -114877,6 +114877,7 @@
           const periods = [{key: currentYear, label: currentYear}, {key: '10yr_Median', label: '10yr Avg'}, {key: '2019', label: '2019'}];
           const [hidden, setHidden] = useState(new Set());
           const [trimOutliers, setTrimOutliers] = useState(false);
+          const [showRegression, setShowRegression] = useState(false);
           const [highlightCode, setHighlightCode] = useState('');
           const [tooltip, setTooltip] = useState(null);
           const chartRef = useRef(null);
@@ -114934,6 +114935,25 @@
           }, [visiblePoints]);
 
           // Bubble size: log scale so GDP doesn't make everyone else a dot
+          const regression = useMemo(() => {
+            if (!showRegression || visiblePoints.length < 3) return null;
+            const n = visiblePoints.length;
+            const sx = visiblePoints.reduce((a, p) => a + p.x, 0);
+            const sy = visiblePoints.reduce((a, p) => a + p.y, 0);
+            const sxx = visiblePoints.reduce((a, p) => a + p.x * p.x, 0);
+            const sxy = visiblePoints.reduce((a, p) => a + p.x * p.y, 0);
+            const syy = visiblePoints.reduce((a, p) => a + p.y * p.y, 0);
+            const denom = n * sxx - sx * sx;
+            if (Math.abs(denom) < 1e-10) return null;
+            const slope = (n * sxy - sx * sy) / denom;
+            const intercept = (sy - slope * sx) / n;
+            const yMean = sy / n;
+            const ssTot = syy - n * yMean * yMean;
+            const ssRes = visiblePoints.reduce((a, p) => a + (p.y - (slope * p.x + intercept)) ** 2, 0);
+            const r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
+            return { slope, intercept, r2 };
+          }, [visiblePoints, showRegression]);
+
           const [szLogMin, szLogMax] = useMemo(() => {
             const vals = visiblePoints.map(p => p.sz).filter(v => v != null && v > 0);
             if (!vals.length) return [0, 1];
@@ -115035,6 +115055,15 @@
                         {trimOutliers ? '✕ Hiding outliers' : 'Hide outliers'}
                       </button>
                     </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Regression</label>
+                      <button onClick={() => setShowRegression(v => !v)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
+                          showRegression ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-violet-50'
+                        }`}>
+                        {showRegression ? '✓ OLS line' : 'Add OLS line'}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Highlight Country</label>
@@ -115079,6 +115108,23 @@
                       transform={`rotate(-90,14,${PAD.t+iH/2})`}>
                       {yInd} ({yPeriod === '10yr_Median' ? '10yr Avg' : yPeriod})
                     </text>
+                    {regression && (() => {
+                      const x1 = xMin, x2 = xMax;
+                      const y1 = regression.slope * x1 + regression.intercept;
+                      const y2 = regression.slope * x2 + regression.intercept;
+                      const labelX = sx(x1 + (x2 - x1) * 0.97);
+                      const labelY = sy(y2) - 6;
+                      return (
+                        <g>
+                          <line x1={sx(x1)} y1={sy(y1)} x2={sx(x2)} y2={sy(y2)}
+                            stroke="#7c3aed" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.8"/>
+                          <text x={labelX} y={labelY} textAnchor="end" fontSize="11"
+                            fill="#7c3aed" fontWeight="600">
+                            R²={regression.r2.toFixed(2)}
+                          </text>
+                        </g>
+                      );
+                    })()}
                     {normalPts.map(p => (
                       <circle key={p.code} cx={sx(p.x)} cy={sy(p.y)} r={getRadius(p)}
                         fill={getColor(p)} fillOpacity="0.75" stroke="white" strokeWidth="0.5"
