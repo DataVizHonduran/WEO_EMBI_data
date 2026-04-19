@@ -8,19 +8,107 @@ import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Comprehensive Trading Economics country name → ISO3 mapping for all S&P-rated sovereigns
 COUNTRY_NAME_TO_ISO = {
-    'Angola': 'AGO', 'Argentina': 'ARG', 'Bahrain': 'BHR', 'Brazil': 'BRA',
-    'Bulgaria': 'BGR', 'Chile': 'CHL', 'China': 'CHN', 'Colombia': 'COL',
-    'Costa Rica': 'CRI', "Cote D'Ivoire": 'CIV', 'Dominican Republic': 'DOM',
-    'Ecuador': 'ECU', 'Egypt': 'EGY', 'Ghana': 'GHA', 'Guatemala': 'GTM',
-    'Hungary': 'HUN', 'Jamaica': 'JAM', 'Jordan': 'JOR', 'Kazakhstan': 'KAZ',
-    'Kenya': 'KEN', 'Latvia': 'LVA', 'Malaysia': 'MYS', 'Mexico': 'MEX',
-    'Morocco': 'MAR', 'Nigeria': 'NGA', 'Oman': 'OMN', 'Pakistan': 'PAK',
-    'Panama': 'PAN', 'Peru': 'PER', 'Philippines': 'PHL', 'Poland': 'POL',
-    'Romania': 'ROU', 'Saudi Arabia': 'SAU', 'Serbia': 'SRB', 'South Africa': 'ZAF',
-    'Sri Lanka': 'LKA', 'Turkey': 'TUR', 'Ukraine': 'UKR',
-    'United Arab Emirates': 'ARE', 'Uruguay': 'URY',
+    # Africa
+    'Angola': 'AGO', 'Benin': 'BEN', 'Botswana': 'BWA', 'Burkina Faso': 'BFA',
+    'Cameroon': 'CMR', 'Cape Verde': 'CPV', "Cote D'Ivoire": 'CIV', 'Egypt': 'EGY',
+    'Ethiopia': 'ETH', 'Gabon': 'GAB', 'Ghana': 'GHA', 'Kenya': 'KEN',
+    'Lesotho': 'LSO', 'Malawi': 'MWI', 'Mali': 'MLI', 'Morocco': 'MAR',
+    'Mozambique': 'MOZ', 'Namibia': 'NAM', 'Niger': 'NER', 'Nigeria': 'NGA',
+    'Rwanda': 'RWA', 'Senegal': 'SEN', 'South Africa': 'ZAF', 'Tanzania': 'TZA',
+    'Togo': 'TGO', 'Tunisia': 'TUN', 'Uganda': 'UGA', 'Zambia': 'ZMB',
+
+    # Americas
+    'Argentina': 'ARG', 'Belize': 'BLZ', 'Bolivia': 'BOL', 'Brazil': 'BRA',
+    'Canada': 'CAN', 'Chile': 'CHL', 'Colombia': 'COL', 'Costa Rica': 'CRI',
+    'Dominican Republic': 'DOM', 'Ecuador': 'ECU', 'El Salvador': 'SLV',
+    'Guatemala': 'GTM', 'Honduras': 'HND', 'Jamaica': 'JAM', 'Mexico': 'MEX',
+    'Nicaragua': 'NIC', 'Panama': 'PAN', 'Paraguay': 'PRY', 'Peru': 'PER',
+    'Suriname': 'SUR', 'Trinidad and Tobago': 'TTO', 'United States': 'USA',
+    'Uruguay': 'URY', 'Venezuela': 'VEN',
+
+    # Asia-Pacific
+    'Australia': 'AUS', 'Bangladesh': 'BGD', 'China': 'CHN', 'Cook Islands': 'COK',
+    'Fiji': 'FJI', 'Hong Kong': 'HKG', 'India': 'IND', 'Indonesia': 'IDN',
+    'Japan': 'JPN', 'Kazakhstan': 'KAZ', 'Malaysia': 'MYS', 'Mongolia': 'MNG',
+    'New Zealand': 'NZL', 'Pakistan': 'PAK', 'Papua New Guinea': 'PNG',
+    'Philippines': 'PHL', 'Singapore': 'SGP', 'South Korea': 'KOR',
+    'Sri Lanka': 'LKA', 'Taiwan': 'TWN', 'Thailand': 'THA', 'Vietnam': 'VNM',
+
+    # Europe
+    'Albania': 'ALB', 'Armenia': 'ARM', 'Austria': 'AUT', 'Azerbaijan': 'AZE',
+    'Belarus': 'BLR', 'Belgium': 'BEL', 'Bosnia and Herzegovina': 'BIH',
+    'Bulgaria': 'BGR', 'Croatia': 'HRV', 'Cyprus': 'CYP', 'Czech Republic': 'CZE',
+    'Denmark': 'DNK', 'Estonia': 'EST', 'Finland': 'FIN', 'France': 'FRA',
+    'Georgia': 'GEO', 'Germany': 'DEU', 'Greece': 'GRC', 'Hungary': 'HUN',
+    'Iceland': 'ISL', 'Ireland': 'IRL', 'Italy': 'ITA', 'Kosovo': 'XKX',
+    'Latvia': 'LVA', 'Lithuania': 'LTU', 'Luxembourg': 'LUX', 'Malta': 'MLT',
+    'Moldova': 'MDA', 'Montenegro': 'MNE', 'Netherlands': 'NLD', 'North Macedonia': 'MKD',
+    'Norway': 'NOR', 'Poland': 'POL', 'Portugal': 'PRT', 'Romania': 'ROU',
+    'Russia': 'RUS', 'Serbia': 'SRB', 'Slovakia': 'SVK', 'Slovenia': 'SVN',
+    'Spain': 'ESP', 'Sweden': 'SWE', 'Switzerland': 'CHE', 'Turkey': 'TUR',
+    'Ukraine': 'UKR', 'United Kingdom': 'GBR',
+
+    # Middle East
+    'Bahrain': 'BHR', 'Israel': 'ISR', 'Jordan': 'JOR', 'Kuwait': 'KWT',
+    'Lebanon': 'LBN', 'Oman': 'OMN', 'Qatar': 'QAT', 'Saudi Arabia': 'SAU',
+    'United Arab Emirates': 'ARE',
 }
+
+# ISO3 → region for the JS UI
+ISO_TO_REGION = {
+    # Africa
+    'AGO': 'Africa', 'BEN': 'Africa', 'BWA': 'Africa', 'BFA': 'Africa',
+    'CMR': 'Africa', 'CPV': 'Africa', 'CIV': 'Africa', 'EGY': 'Africa',
+    'ETH': 'Africa', 'GAB': 'Africa', 'GHA': 'Africa', 'KEN': 'Africa',
+    'LSO': 'Africa', 'MWI': 'Africa', 'MLI': 'Africa', 'MAR': 'Africa',
+    'MOZ': 'Africa', 'NAM': 'Africa', 'NER': 'Africa', 'NGA': 'Africa',
+    'RWA': 'Africa', 'SEN': 'Africa', 'ZAF': 'Africa', 'TZA': 'Africa',
+    'TGO': 'Africa', 'TUN': 'Africa', 'UGA': 'Africa', 'ZMB': 'Africa',
+    # Americas
+    'ARG': 'Americas', 'BLZ': 'Americas', 'BOL': 'Americas', 'BRA': 'Americas',
+    'CAN': 'Americas', 'CHL': 'Americas', 'COL': 'Americas', 'CRI': 'Americas',
+    'DOM': 'Americas', 'ECU': 'Americas', 'SLV': 'Americas', 'GTM': 'Americas',
+    'HND': 'Americas', 'JAM': 'Americas', 'MEX': 'Americas', 'NIC': 'Americas',
+    'PAN': 'Americas', 'PRY': 'Americas', 'PER': 'Americas', 'SUR': 'Americas',
+    'TTO': 'Americas', 'USA': 'Americas', 'URY': 'Americas', 'VEN': 'Americas',
+    # Asia-Pacific
+    'AUS': 'Asia-Pacific', 'BGD': 'Asia-Pacific', 'CHN': 'Asia-Pacific',
+    'COK': 'Asia-Pacific', 'FJI': 'Asia-Pacific', 'HKG': 'Asia-Pacific',
+    'IND': 'Asia-Pacific', 'IDN': 'Asia-Pacific', 'JPN': 'Asia-Pacific',
+    'KAZ': 'Asia-Pacific', 'MYS': 'Asia-Pacific', 'MNG': 'Asia-Pacific',
+    'NZL': 'Asia-Pacific', 'PAK': 'Asia-Pacific', 'PNG': 'Asia-Pacific',
+    'PHL': 'Asia-Pacific', 'SGP': 'Asia-Pacific', 'KOR': 'Asia-Pacific',
+    'LKA': 'Asia-Pacific', 'TWN': 'Asia-Pacific', 'THA': 'Asia-Pacific',
+    'VNM': 'Asia-Pacific',
+    # Europe
+    'ALB': 'Europe', 'ARM': 'Europe', 'AUT': 'Europe', 'AZE': 'Europe',
+    'BLR': 'Europe', 'BEL': 'Europe', 'BIH': 'Europe', 'BGR': 'Europe',
+    'HRV': 'Europe', 'CYP': 'Europe', 'CZE': 'Europe', 'DNK': 'Europe',
+    'EST': 'Europe', 'FIN': 'Europe', 'FRA': 'Europe', 'GEO': 'Europe',
+    'DEU': 'Europe', 'GRC': 'Europe', 'HUN': 'Europe', 'ISL': 'Europe',
+    'IRL': 'Europe', 'ITA': 'Europe', 'XKX': 'Europe', 'LVA': 'Europe',
+    'LTU': 'Europe', 'LUX': 'Europe', 'MLT': 'Europe', 'MDA': 'Europe',
+    'MNE': 'Europe', 'NLD': 'Europe', 'MKD': 'Europe', 'NOR': 'Europe',
+    'POL': 'Europe', 'PRT': 'Europe', 'ROU': 'Europe', 'RUS': 'Europe',
+    'SRB': 'Europe', 'SVK': 'Europe', 'SVN': 'Europe', 'ESP': 'Europe',
+    'SWE': 'Europe', 'CHE': 'Europe', 'TUR': 'Europe', 'UKR': 'Europe',
+    'GBR': 'Europe',
+    # Middle East
+    'BHR': 'Middle East', 'ISR': 'Middle East', 'JOR': 'Middle East',
+    'KWT': 'Middle East', 'LBN': 'Middle East', 'OMN': 'Middle East',
+    'QAT': 'Middle East', 'SAU': 'Middle East', 'ARE': 'Middle East',
+}
+
+# ISO3 → display name
+ISO_TO_NAME = {v: k for k, v in COUNTRY_NAME_TO_ISO.items()}
+# Overrides for better display names
+ISO_TO_NAME.update({
+    'CIV': 'Côte d\'Ivoire', 'KOR': 'South Korea', 'GBR': 'United Kingdom',
+    'USA': 'United States', 'ARE': 'UAE', 'TTO': 'Trinidad & Tobago',
+    'BIH': 'Bosnia & Herzegovina',
+})
 
 RATINGS_NUMERIC = {
     'AAA': 1, 'AA+': 2, 'AA': 3, 'AA-': 4,
@@ -77,9 +165,7 @@ current_month = datetime.now().month
 
 
 def generate_download_attempts(year, month):
-    """Build ordered list of WEO (year, release) to try, newest first.
-    April = release 1, October = release 2.
-    """
+    """Build ordered list of WEO (year, release) to try, newest first."""
     if month >= 10:
         start_year, start_release = year, 2
     elif month >= 4:
@@ -127,30 +213,6 @@ for weo_year, weo_release in download_attempts:
 if not weo_downloaded:
     raise RuntimeError("Could not download WEO data from any available release.")
 
-# Get EMB holdings data
-url = 'https://www.ishares.com/us/products/239572/ishares-jp-morgan-usd-emerging-markets-bond-etf/1467271812596.ajax?fileType=csv&fileName=EMB_holdings&dataType=fund'
-response = requests.get(url)
-csv_data = StringIO(response.text)
-df = pd.read_csv(csv_data, skiprows=9)
-
-countries = df['Location'].dropna().unique()
-
-country_mapping = {
-    'Angola': 'AGO', 'Argentina': 'ARG', 'Bahrain': 'BHR', 'Brazil': 'BRA',
-    'Bulgaria': 'BGR', 'Chile': 'CHL', 'China': 'CHN', 'Colombia': 'COL',
-    'Costa Rica': 'CRI', "Cote D'Ivoire (Ivory Coast)": 'CIV', 'Dominican Republic': 'DOM',
-    'Ecuador': 'ECU', 'Egypt': 'EGY', 'Ghana': 'GHA', 'Guatemala': 'GTM',
-    'Hungary': 'HUN', 'Jamaica': 'JAM', 'Jordan': 'JOR', 'Kazakhstan': 'KAZ',
-    'Kenya': 'KEN', 'Latvia': 'LVA', 'Malaysia': 'MYS', 'Mexico': 'MEX',
-    'Morocco': 'MAR', 'Nigeria': 'NGA', 'Oman': 'OMN', 'Pakistan': 'PAK',
-    'Panama': 'PAN', 'Peru': 'PER', 'Philippines': 'PHL', 'Poland': 'POL',
-    'Romania': 'ROU', 'Saudi Arabia': 'SAU', 'Serbia': 'SRB', 'South Africa': 'ZAF',
-    'Sri Lanka': 'LKA', 'Turkey': 'TUR', 'Ukraine': 'UKR', 'United Arab Emirates': 'ARE',
-    'Uruguay': 'URY'
-}
-
-embi_countries = [country_mapping.get(c, c) for c in countries if c in country_mapping]
-
 print("\nAttempting to load WEO data...")
 try:
     w = weo.WEO(weo_filepath)
@@ -182,6 +244,21 @@ except KeyError as e:
 
     w = CustomWEO(df_weo)
     print("✓ Created custom WEO wrapper")
+
+# Fetch ratings first to determine country universe
+country_ratings = fetch_ratings()
+rated_isos = set(country_ratings.keys())
+
+# Get all WEO country codes from a core variable, then intersect with rated countries
+print("\nDetermining WEO country universe...")
+try:
+    gdp_series = w.getc('NGDPD')
+    weo_isos = set(gdp_series.columns.tolist())
+    target_countries = sorted(weo_isos & rated_isos)
+    print(f"✓ WEO countries: {len(weo_isos)}, Rated: {len(rated_isos)}, Intersection: {len(target_countries)}")
+except Exception as e:
+    print(f"⚠ Could not determine WEO universe ({e}), falling back to rated ISOs only")
+    target_countries = sorted(rated_isos)
 
 var_dict = {
     'NGDPD': 'GDP (US Dollars)',
@@ -225,7 +302,11 @@ def get_year_data(series_data, target_year):
 print("\nCollecting data for variables...")
 for var in var_dict.keys():
     try:
-        series_data = w.getc(var)[embi_countries]
+        # Only keep columns that are in our target list
+        all_series = w.getc(var)
+        available = [c for c in target_countries if c in all_series.columns]
+        series_data = all_series[available]
+
         current_values, used_year = get_year_data(series_data, current_year)
         current_year_data[var] = current_values
 
@@ -236,9 +317,9 @@ for var in var_dict.keys():
             values_2019, _ = get_year_data(series_data, 2019)
             data_2019[var] = values_2019
         except Exception as e:
-            data_2019[var] = pd.Series([float('nan')] * len(embi_countries), index=embi_countries).sort_values()
+            data_2019[var] = pd.Series([float('nan')] * len(available), index=available).sort_values()
 
-        print(f"✓ {var}")
+        print(f"✓ {var} ({len(available)} countries)")
     except Exception as e:
         print(f"✗ {var}: {e}")
         current_year_data[var] = None
@@ -295,7 +376,6 @@ country_dfs = {}
 for code in dff.index.tolist():
     try:
         country_dfs[code] = get_country_df(code, sort_order=logical_order)
-        print(f"✓ {code}")
     except Exception as e:
         print(f"✗ {code}: {e}")
 
@@ -311,12 +391,25 @@ for country_code, df in country_dfs.items():
 
 print(f"\n✓ {len(country_metrics_json)} countries converted to JSON")
 
-# Fetch credit ratings and build peer groups
-country_ratings = fetch_ratings()
+# Build region-grouped country data for JS (only countries with WEO data)
+region_order = ['Africa', 'Americas', 'Asia-Pacific', 'Europe', 'Middle East']
+country_data_by_region = {r: {} for r in region_order}
+for iso in sorted(country_metrics_json.keys()):
+    region = ISO_TO_REGION.get(iso, 'Other')
+    name = ISO_TO_NAME.get(iso, iso)
+    if region not in country_data_by_region:
+        country_data_by_region[region] = {}
+    country_data_by_region[region][iso] = name
+
+# Remove empty regions
+country_data_by_region = {r: v for r, v in country_data_by_region.items() if v}
+
+# Build rating groups
 rating_groups_ordered = ['Investment Grade', 'BB', 'B', 'CCC & Below']
 rating_groups = {k: [] for k in rating_groups_ordered}
 for iso, rating in country_ratings.items():
-    rating_groups[rating_to_bucket(rating)].append(iso)
+    if iso in country_metrics_json:
+        rating_groups[rating_to_bucket(rating)].append(iso)
 rating_groups = {k: v for k, v in rating_groups.items() if v}
 
 html_template = """<!DOCTYPE html>
@@ -324,7 +417,7 @@ html_template = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emerging Markets Dashboard</title>
+    <title>Sovereign Dashboard</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -341,27 +434,7 @@ html_template = """<!DOCTYPE html>
         const weoReleaseLabel = "WEO_RELEASE_PLACEHOLDER";
         const ratingGroups    = RATING_GROUPS_PLACEHOLDER;
         const countryRatings  = COUNTRY_RATINGS_PLACEHOLDER;
-
-        const countryData = {
-          'Africa': {
-            'AGO': 'Angola', 'CIV': 'Côte d\\'Ivoire', 'EGY': 'Egypt', 'GHA': 'Ghana',
-            'KEN': 'Kenya', 'MAR': 'Morocco', 'NGA': 'Nigeria', 'ZAF': 'South Africa'
-          },
-          'Americas': {
-            'ARG': 'Argentina', 'BRA': 'Brazil', 'CHL': 'Chile', 'COL': 'Colombia',
-            'CRI': 'Costa Rica', 'DOM': 'Dominican Republic', 'ECU': 'Ecuador', 'GTM': 'Guatemala',
-            'JAM': 'Jamaica', 'MEX': 'Mexico', 'PAN': 'Panama', 'PER': 'Peru', 'URY': 'Uruguay'
-          },
-          'Asia': {
-            'BHR': 'Bahrain', 'CHN': 'China', 'JOR': 'Jordan', 'KAZ': 'Kazakhstan',
-            'MYS': 'Malaysia', 'OMN': 'Oman', 'PAK': 'Pakistan', 'PHL': 'Philippines',
-            'SAU': 'Saudi Arabia', 'LKA': 'Sri Lanka', 'ARE': 'United Arab Emirates'
-          },
-          'Europe': {
-            'BGR': 'Bulgaria', 'HUN': 'Hungary', 'LVA': 'Latvia', 'POL': 'Poland',
-            'ROU': 'Romania', 'SRB': 'Serbia', 'TUR': 'Turkey', 'UKR': 'Ukraine'
-          }
-        };
+        const countryData     = COUNTRY_DATA_BY_REGION_PLACEHOLDER;
 
         const allCountriesFlat = Object.entries(countryData).flatMap(([continent, countries]) =>
           Object.entries(countries).map(([code, name]) => ({ code, name, continent }))
@@ -437,7 +510,14 @@ html_template = """<!DOCTYPE html>
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-800">{countryName}</h2>
-                    <p className="text-gray-600 text-lg">{countryCode}</p>
+                    <p className="text-gray-600 text-lg">
+                      {countryCode}
+                      {countryRatings[countryCode] && (
+                        <span className="ml-3 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-sm font-semibold">
+                          S&P {countryRatings[countryCode]}
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <Globe className="w-16 h-16 text-blue-600" />
                 </div>
@@ -495,7 +575,6 @@ html_template = """<!DOCTYPE html>
               .sort((a, b) => b.value - a.value);
           }, [indicator, period, filterMode, continentFilter, ratingFilter]);
 
-          // Per-bucket averages computed from the FULL universe (not filtered rows)
           const ratingAverages = useMemo(() => {
             if (!showRatingAvg) return [];
             return Object.entries(ratingGroups).map(([bucket, codes]) => {
@@ -521,14 +600,11 @@ html_template = """<!DOCTYPE html>
             (showRatingAvg && ratingAverages.some(a => a.avg < 0));
           const showMedian  = period === currentYear;
 
-          // Convert a data value to a percentage position within the bar track
           const valToPct = (v) => Math.min(Math.abs(v) / maxAbs * 100, 100);
 
           return (
             <div className="max-w-4xl mx-auto">
-              {/* Controls */}
               <div className="bg-white rounded-xl shadow p-5 mb-6 flex flex-col gap-4">
-                {/* Indicator */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Indicator</label>
                   <select
@@ -543,7 +619,6 @@ html_template = """<!DOCTYPE html>
                 </div>
 
                 <div className="flex flex-wrap gap-4">
-                  {/* Period */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Period</label>
                     <div className="flex gap-2">
@@ -558,7 +633,6 @@ html_template = """<!DOCTYPE html>
                     </div>
                   </div>
 
-                  {/* Filter mode toggle */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Group by</label>
                     <div className="flex gap-2">
@@ -574,7 +648,6 @@ html_template = """<!DOCTYPE html>
                   </div>
                 </div>
 
-                {/* Context-sensitive bucket buttons + rating avg toggle */}
                 <div className="flex flex-wrap gap-4 items-end">
                   <div className="flex-1 min-w-0">
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
@@ -609,7 +682,6 @@ html_template = """<!DOCTYPE html>
                 </div>
               </div>
 
-              {/* Chart */}
               <div className="bg-white rounded-xl shadow p-6">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-xs text-gray-400">
@@ -632,7 +704,6 @@ html_template = """<!DOCTYPE html>
                     const absPct   = valToPct(value);
                     const positive = value >= 0;
                     const medPct   = (showMedian && median != null) ? valToPct(median) : null;
-                    const medPos   = (medPct != null) ? medPct : null;
                     const medPositive = median >= 0;
 
                     if (hasNegative) {
@@ -642,12 +713,11 @@ html_template = """<!DOCTYPE html>
                             {name}
                             {rating && <span className="ml-1 text-gray-400 font-normal">({rating})</span>}
                           </div>
-                          {/* Diverging bar: zero at 50% */}
                           <div className="flex-1 flex items-center h-6 relative">
                             <div className="w-1/2 flex justify-end relative h-full">
                               {!positive && (
                                 <div style={{ width: `${absPct}%` }} className="h-5 bg-red-400 rounded-l relative">
-                                  {medPos != null && !medPositive && (
+                                  {medPct != null && !medPositive && (
                                     <div style={{ right: `${medPct / absPct * 100}%` }}
                                       className="absolute top-0 bottom-0 w-0.5 border-r-2 border-dashed border-orange-400" />
                                   )}
@@ -658,7 +728,7 @@ html_template = """<!DOCTYPE html>
                             <div className="w-1/2 flex justify-start relative h-full">
                               {positive && (
                                 <div style={{ width: `${absPct}%` }} className="h-5 bg-blue-500 rounded-r relative">
-                                  {medPos != null && medPositive && (
+                                  {medPct != null && medPositive && (
                                     <div style={{ left: `${medPct / absPct * 100}%` }}
                                       className="absolute top-0 bottom-0 w-0.5 border-l-2 border-dashed border-orange-400" />
                                   )}
@@ -681,8 +751,8 @@ html_template = """<!DOCTYPE html>
                         </div>
                         <div className="flex-1 relative h-5">
                           <div style={{ width: `${absPct}%` }} className="h-5 bg-blue-500 rounded-r" />
-                          {medPos != null && (
-                            <div style={{ left: `${medPos}%` }}
+                          {medPct != null && (
+                            <div style={{ left: `${medPct}%` }}
                               className="absolute top-0 bottom-0 w-0.5 border-l-2 border-dashed border-orange-400" />
                           )}
                         </div>
@@ -693,7 +763,6 @@ html_template = """<!DOCTYPE html>
                     );
                   })}
 
-                  {/* Rating average rows */}
                   {showRatingAvg && ratingAverages.length > 0 && (
                     <>
                       <div className="border-t-2 border-gray-200 mt-3 mb-2" />
@@ -771,20 +840,28 @@ html_template = """<!DOCTYPE html>
           const [tab, setTab] = useState('countries');
           const [selectedCountry, setSelectedCountry] = useState(null);
           const [selectedContinent, setSelectedContinent] = useState('All');
+          const [search, setSearch] = useState('');
 
           const handleCountryClick = (code, name) => setSelectedCountry({ code, name });
           const handleBack = () => setSelectedCountry(null);
           const continents = ['All', ...Object.keys(countryData)];
 
           const getFilteredCountries = () => {
+            let list;
             if (selectedContinent === 'All') {
-              return Object.entries(countryData).flatMap(([continent, countries]) =>
+              list = Object.entries(countryData).flatMap(([continent, countries]) =>
                 Object.entries(countries).map(([code, name]) => ({ code, name, continent }))
               );
+            } else {
+              list = Object.entries(countryData[selectedContinent] || {}).map(([code, name]) => ({
+                code, name, continent: selectedContinent
+              }));
             }
-            return Object.entries(countryData[selectedContinent] || {}).map(([code, name]) => ({
-              code, name, continent: selectedContinent
-            }));
+            if (search.trim()) {
+              const q = search.trim().toLowerCase();
+              list = list.filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
+            }
+            return list;
           };
 
           if (selectedCountry) {
@@ -805,15 +882,13 @@ html_template = """<!DOCTYPE html>
           return (
             <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 p-8">
               <div className="max-w-7xl mx-auto">
-                {/* Header */}
                 <div className="text-center mb-5">
-                  <h1 className="text-4xl font-bold text-gray-800 mb-2">Emerging Markets Dashboard</h1>
+                  <h1 className="text-4xl font-bold text-gray-800 mb-2">Sovereign Dashboard</h1>
                   <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
-                    Data: IMF {weoReleaseLabel} WEO
+                    Data: IMF {weoReleaseLabel} WEO · S&P Ratings
                   </span>
                 </div>
 
-                {/* Tab switcher */}
                 <div className="flex justify-center gap-2 mb-6">
                   {[['countries', 'Countries'], ['compare', 'Compare']].map(([key, label]) => (
                     <button
@@ -832,7 +907,7 @@ html_template = """<!DOCTYPE html>
                   <CompareView />
                 ) : (
                   <>
-                    <div className="flex justify-center gap-2 mb-6 flex-wrap">
+                    <div className="flex justify-center gap-2 mb-4 flex-wrap">
                       {continents.map(continent => (
                         <button
                           key={continent}
@@ -847,6 +922,15 @@ html_template = """<!DOCTYPE html>
                         </button>
                       ))}
                     </div>
+                    <div className="flex justify-center mb-6">
+                      <input
+                        type="text"
+                        placeholder="Search country…"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="w-64 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {getFilteredCountries().map(({ code, name, continent }) => (
                         <button
@@ -859,7 +943,11 @@ html_template = """<!DOCTYPE html>
                               <h3 className="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition">{name}</h3>
                               <p className="text-sm text-gray-500">{code}</p>
                             </div>
-                            <Globe className="w-6 h-6 text-blue-400" />
+                            {countryRatings[code] && (
+                              <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-50 text-blue-700">
+                                {countryRatings[code]}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-gray-400 mt-2">{continent}</p>
                         </button>
@@ -878,11 +966,12 @@ html_template = """<!DOCTYPE html>
 </html>"""
 
 html_content = (html_template
-    .replace('COUNTRY_DATA_PLACEHOLDER',    json.dumps(country_metrics_json, indent=2))
-    .replace('CURRENT_YEAR_PLACEHOLDER',    current_year_str)
-    .replace('WEO_RELEASE_PLACEHOLDER',     weo_release_label)
-    .replace('RATING_GROUPS_PLACEHOLDER',   json.dumps(rating_groups))
-    .replace('COUNTRY_RATINGS_PLACEHOLDER', json.dumps(country_ratings)))
+    .replace('COUNTRY_DATA_PLACEHOLDER',            json.dumps(country_metrics_json, indent=2))
+    .replace('CURRENT_YEAR_PLACEHOLDER',            current_year_str)
+    .replace('WEO_RELEASE_PLACEHOLDER',             weo_release_label)
+    .replace('RATING_GROUPS_PLACEHOLDER',           json.dumps(rating_groups))
+    .replace('COUNTRY_RATINGS_PLACEHOLDER',         json.dumps(country_ratings))
+    .replace('COUNTRY_DATA_BY_REGION_PLACEHOLDER',  json.dumps(country_data_by_region)))
 
 output_filename = os.path.join(SCRIPT_DIR, 'index.html')
 with open(output_filename, 'w', encoding='utf-8') as f:
