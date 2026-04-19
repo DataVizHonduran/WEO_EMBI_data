@@ -11,2543 +11,2513 @@
 </head>
 <body>
     <div id="root"></div>
-    
+
     <script type="text/babel">
         const { useState } = React;
-        
-        // Embedded country data
+
         const countryMetrics = {
   "AGO": {
     "GDP (US Dollars)": {
-      "2025": 113.3,
+      "2026": 109.4,
       "2019": 94.7,
-      "10yr_Median": 113.8
+      "10yr_Median": 111.6
     },
     "Population": {
-      "2025": 39.3,
+      "2026": 40.7,
       "2019": 32.4,
-      "10yr_Median": 34.0
+      "10yr_Median": 35.0
     },
     "Real GDP growth (%)": {
-      "2025": 2.4,
+      "2026": 2.1,
       "2019": -0.2,
-      "10yr_Median": 0.4
+      "10yr_Median": 1.5
     },
     "Inflation, consumer prices (%)": {
-      "2025": 22.0,
+      "2026": 16.4,
       "2019": 17.1,
-      "10yr_Median": 22.1
+      "10yr_Median": 21.7
     },
     "National savings (% of GDP)": {
-      "2025": 37.8,
+      "2026": 37.7,
       "2019": 36.3,
-      "10yr_Median": 37.5
+      "10yr_Median": 37.7
     },
     "Total investment (% of GDP)": {
-      "2025": 35.6,
+      "2026": 36.0,
       "2019": 30.9,
-      "10yr_Median": 33.5
+      "10yr_Median": 33.8
     },
     "Current account balance (% of GDP)": {
-      "2025": 2.1,
+      "2026": 1.4,
       "2019": 5.4,
       "10yr_Median": 4.6
     },
     "General government revenue (% of GDP)": {
-      "2025": 15.0,
+      "2026": 14.7,
       "2019": 18.9,
       "10yr_Median": 17.8
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 17.3,
+      "2026": 18.0,
       "2019": 18.2,
-      "10yr_Median": 18.8
+      "10yr_Median": 18.2
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -2.3,
+      "2026": -3.3,
       "2019": 0.7,
       "10yr_Median": -1.3
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 1.3,
+      "2026": 1.1,
       "2019": 5.7,
       "10yr_Median": 4.0
     },
     "General government gross debt (% of GDP)": {
-      "2025": 64.5,
+      "2026": 63.9,
       "2019": 101.4,
-      "10yr_Median": 69.0
+      "10yr_Median": 68.0
     }
   },
   "ARE": {
     "GDP (US Dollars)": {
-      "2025": 548.6,
+      "2026": 577.4,
       "2019": 418.0,
-      "10yr_Median": 422.5
+      "10yr_Median": 464.9
     },
     "Population": {
-      "2025": 11.1,
+      "2026": 11.2,
       "2019": 9.5,
-      "10yr_Median": 9.7
+      "10yr_Median": 10.1
     },
     "Real GDP growth (%)": {
-      "2025": 4.0,
+      "2026": 5.0,
       "2019": 1.1,
       "10yr_Median": 3.7
     },
     "Inflation, consumer prices (%)": {
-      "2025": 2.1,
+      "2026": 2.0,
       "2019": -1.9,
-      "10yr_Median": 1.7
+      "10yr_Median": 1.9
     },
     "National savings (% of GDP)": {
-      "2025": 34.7,
+      "2026": 34.4,
       "2019": 33.0,
-      "10yr_Median": 33.9
+      "10yr_Median": 34.6
     },
     "Total investment (% of GDP)": {
-      "2025": 28.1,
+      "2026": 28.0,
       "2019": 24.1,
-      "10yr_Median": 24.9
+      "10yr_Median": 26.2
     },
     "Current account balance (% of GDP)": {
-      "2025": 6.6,
+      "2026": 6.4,
       "2019": 8.9,
       "10yr_Median": 9.0
     },
     "General government revenue (% of GDP)": {
-      "2025": 26.9,
+      "2026": 26.9,
       "2019": 31.0,
-      "10yr_Median": 29.3
+      "10yr_Median": 28.8
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 24.0,
+      "2026": 24.0,
       "2019": 28.4,
-      "10yr_Median": 26.5
+      "10yr_Median": 25.2
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": 2.9,
+      "2026": 2.9,
       "2019": 2.6,
-      "10yr_Median": 3.3
+      "10yr_Median": 3.4
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 3.6,
+      "2026": 3.7,
       "2019": 2.9,
-      "10yr_Median": 3.8
+      "10yr_Median": 3.9
     },
     "General government gross debt (% of GDP)": {
-      "2025": 32.8,
+      "2026": 32.6,
       "2019": 26.8,
-      "10yr_Median": 32.1
+      "10yr_Median": 32.3
     }
   },
   "ARG": {
     "GDP (US Dollars)": {
-      "2025": 683.5,
+      "2026": 715.4,
       "2019": 446.8,
-      "10yr_Median": 594.5
+      "10yr_Median": 632.2
     },
     "Population": {
-      "2025": 47.6,
+      "2026": 48.1,
       "2019": 44.9,
-      "10yr_Median": 45.6
+      "10yr_Median": 46.0
     },
     "Real GDP growth (%)": {
-      "2025": 5.5,
+      "2026": 4.5,
       "2019": -2.0,
-      "10yr_Median": -1.7
+      "10yr_Median": 0.6
     },
     "Inflation, consumer prices (%)": {
-      "2025": 35.9,
+      "2026": 14.5,
       "2019": 53.5,
-      "10yr_Median": 48.4
+      "10yr_Median": 45.2
     },
     "National savings (% of GDP)": {
-      "2025": 13.1,
+      "2026": 14.5,
       "2019": 13.5,
-      "10yr_Median": 15.0
+      "10yr_Median": 14.8
     },
     "Total investment (% of GDP)": {
-      "2025": 13.5,
+      "2026": 14.8,
       "2019": 14.2,
-      "10yr_Median": 17.1
+      "10yr_Median": 15.7
     },
     "Current account balance (% of GDP)": {
-      "2025": -0.4,
+      "2026": -0.3,
       "2019": -0.8,
-      "10yr_Median": -0.7
+      "10yr_Median": -0.5
     },
     "General government revenue (% of GDP)": {
-      "2025": 33.1,
+      "2026": 34.6,
       "2019": 33.7,
       "10yr_Median": 33.6
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 32.7,
+      "2026": 33.2,
       "2019": 38.1,
-      "10yr_Median": 38.0
+      "10yr_Median": 37.9
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": 0.4,
+      "2026": 1.4,
       "2019": -4.4,
-      "10yr_Median": -4.9
+      "10yr_Median": -4.4
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 1.8,
+      "2026": 3.7,
       "2019": -0.4,
-      "10yr_Median": -2.4
+      "10yr_Median": -2.0
     },
     "General government gross debt (% of GDP)": {
-      "2025": 73.1,
+      "2026": 68.2,
       "2019": 89.8,
       "10yr_Median": 84.9
     }
   },
   "BGR": {
     "GDP (US Dollars)": {
-      "2025": 117.0,
+      "2026": 123.1,
       "2019": 68.6,
-      "10yr_Median": 77.6
+      "10yr_Median": 87.6
     },
     "Population": {
-      "2025": 6.3,
+      "2026": 6.3,
       "2019": 7.0,
-      "10yr_Median": 6.9
+      "10yr_Median": 6.6
     },
     "Real GDP growth (%)": {
-      "2025": 2.5,
+      "2026": 2.7,
       "2019": 3.8,
-      "10yr_Median": 2.8
+      "10yr_Median": 2.7
     },
     "Inflation, consumer prices (%)": {
-      "2025": 3.7,
+      "2026": 2.3,
       "2019": 2.5,
       "10yr_Median": 2.6
     },
     "National savings (% of GDP)": {
-      "2025": 19.3,
+      "2026": 19.2,
       "2019": 22.4,
       "10yr_Median": 20.6
     },
     "Total investment (% of GDP)": {
-      "2025": 20.8,
+      "2026": 20.1,
       "2019": 20.7,
       "10yr_Median": 20.5
     },
     "Current account balance (% of GDP)": {
-      "2025": -1.5,
+      "2026": -1.0,
       "2019": 1.7,
-      "10yr_Median": 0.5
+      "10yr_Median": 0.3
     },
     "General government revenue (% of GDP)": {
-      "2025": 36.0,
+      "2026": 35.2,
       "2019": 35.0,
-      "10yr_Median": 34.6
+      "10yr_Median": 34.9
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 39.0,
+      "2026": 38.2,
       "2019": 36.0,
-      "10yr_Median": 37.0
+      "10yr_Median": 37.5
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.0,
+      "2026": -3.0,
       "2019": -1.0,
-      "10yr_Median": -1.9
+      "10yr_Median": -2.9
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -2.6,
+      "2026": -2.2,
       "2019": -0.8,
-      "10yr_Median": -1.7
+      "10yr_Median": -2.4
     },
     "General government gross debt (% of GDP)": {
-      "2025": 28.0,
+      "2026": 29.5,
       "2019": 18.4,
       "10yr_Median": 22.5
     }
   },
   "BHR": {
     "GDP (US Dollars)": {
-      "2025": 47.8,
+      "2026": 49.6,
       "2019": 40.4,
-      "10yr_Median": 40.6
+      "10yr_Median": 43.5
     },
     "Population": {
-      "2025": 1.7,
+      "2026": 1.7,
       "2019": 1.5,
       "10yr_Median": 1.5
     },
     "Real GDP growth (%)": {
-      "2025": 2.8,
+      "2026": 3.0,
       "2019": 2.1,
-      "10yr_Median": 3.3
+      "10yr_Median": 2.9
     },
     "Inflation, consumer prices (%)": {
-      "2025": 1.0,
+      "2026": 1.5,
       "2019": 1.0,
       "10yr_Median": 1.0
     },
     "National savings (% of GDP)": {
-      "2025": 33.1,
+      "2026": 30.4,
       "2019": 33.7,
       "10yr_Median": 33.4
     },
     "Total investment (% of GDP)": {
-      "2025": 29.8,
+      "2026": 28.7,
       "2019": 35.6,
-      "10yr_Median": 31.4
+      "10yr_Median": 29.5
     },
     "Current account balance (% of GDP)": {
-      "2025": 3.3,
+      "2026": 1.7,
       "2019": -2.0,
-      "10yr_Median": 0.7
+      "10yr_Median": 2.5
     },
     "General government revenue (% of GDP)": {
-      "2025": 19.2,
+      "2026": 17.9,
       "2019": 22.7,
       "10yr_Median": 19.5
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 29.6,
+      "2026": 29.1,
       "2019": 31.2,
-      "10yr_Median": 30.7
+      "10yr_Median": 30.4
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -10.4,
+      "2026": -11.1,
       "2019": -8.6,
       "10yr_Median": -10.6
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -5.1,
+      "2026": -5.6,
       "2019": -4.4,
-      "10yr_Median": -5.8
+      "10yr_Median": -5.6
     },
     "General government gross debt (% of GDP)": {
-      "2025": 141.4,
+      "2026": 147.0,
       "2019": 97.1,
-      "10yr_Median": 117.0
+      "10yr_Median": 122.7
     }
   },
   "BRA": {
     "GDP (US Dollars)": {
-      "2025": 2126.0,
+      "2026": 2187.0,
       "2019": 1873.3,
-      "10yr_Median": 1934.4
+      "10yr_Median": 2007.7
     },
     "Population": {
-      "2025": 213.4,
+      "2026": 214.1,
       "2019": 207.9,
-      "10yr_Median": 209.6
+      "10yr_Median": 210.5
     },
     "Real GDP growth (%)": {
-      "2025": 2.0,
+      "2026": 2.0,
       "2019": 1.2,
-      "10yr_Median": 1.9
+      "10yr_Median": 2.0
     },
     "Inflation, consumer prices (%)": {
-      "2025": 5.3,
+      "2026": 4.3,
       "2019": 3.7,
-      "10yr_Median": 4.5
+      "10yr_Median": 4.3
     },
     "National savings (% of GDP)": {
-      "2025": 14.5,
+      "2026": 14.4,
       "2019": 12.0,
-      "10yr_Median": 14.3
+      "10yr_Median": 14.4
     },
     "Total investment (% of GDP)": {
-      "2025": 16.8,
+      "2026": 16.7,
       "2019": 15.5,
-      "10yr_Median": 15.9
+      "10yr_Median": 16.4
     },
     "Current account balance (% of GDP)": {
-      "2025": -2.3,
+      "2026": -2.2,
       "2019": -3.5,
-      "10yr_Median": -2.2
+      "10yr_Median": -2.3
     },
     "General government revenue (% of GDP)": {
-      "2025": 39.2,
+      "2026": 39.2,
       "2019": 38.2,
-      "10yr_Median": 37.7
+      "10yr_Median": 38.0
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 47.7,
+      "2026": 46.9,
       "2019": 43.0,
       "10yr_Median": 44.8
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -8.5,
+      "2026": -7.7,
       "2019": -4.9,
-      "10yr_Median": -7.4
+      "10yr_Median": -7.3
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.6,
+      "2026": -0.4,
       "2019": -0.1,
-      "10yr_Median": -0.7
+      "10yr_Median": -0.5
     },
     "General government gross debt (% of GDP)": {
-      "2025": 92.0,
+      "2026": 96.0,
       "2019": 87.1,
-      "10yr_Median": 85.9
+      "10yr_Median": 87.2
     }
   },
   "CHL": {
     "GDP (US Dollars)": {
-      "2025": 343.8,
+      "2026": 357.7,
       "2019": 278.0,
-      "10yr_Median": 298.3
+      "10yr_Median": 308.3
     },
     "Population": {
-      "2025": 20.2,
+      "2026": 20.3,
       "2019": 19.1,
-      "10yr_Median": 19.6
+      "10yr_Median": 19.8
     },
     "Real GDP growth (%)": {
-      "2025": 2.0,
+      "2026": 2.2,
       "2019": 0.6,
-      "10yr_Median": 1.9
+      "10yr_Median": 2.1
     },
     "Inflation, consumer prices (%)": {
-      "2025": 4.4,
+      "2026": 3.2,
       "2019": 2.3,
-      "10yr_Median": 3.9
+      "10yr_Median": 3.5
     },
     "National savings (% of GDP)": {
-      "2025": 21.3,
+      "2026": 21.2,
       "2019": 19.7,
       "10yr_Median": 19.8
     },
     "Total investment (% of GDP)": {
-      "2025": 23.3,
+      "2026": 23.7,
       "2019": 24.9,
       "10yr_Median": 23.5
     },
     "Current account balance (% of GDP)": {
-      "2025": -2.1,
+      "2026": -2.4,
       "2019": -5.2,
       "10yr_Median": -2.9
     },
     "General government revenue (% of GDP)": {
-      "2025": 24.6,
+      "2026": 25.1,
       "2019": 23.8,
-      "10yr_Median": 24.0
+      "10yr_Median": 24.4
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 26.6,
+      "2026": 26.2,
       "2019": 26.5,
       "10yr_Median": 26.6
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -2.0,
+      "2026": -1.1,
       "2019": -2.7,
-      "10yr_Median": -2.6
+      "10yr_Median": -2.5
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -1.1,
+      "2026": -0.1,
       "2019": -2.4,
-      "10yr_Median": -2.1
+      "10yr_Median": -1.9
     },
     "General government gross debt (% of GDP)": {
-      "2025": 43.0,
+      "2026": 43.4,
       "2019": 28.3,
-      "10yr_Median": 34.4
+      "10yr_Median": 37.2
     }
   },
   "CHN": {
     "GDP (US Dollars)": {
-      "2025": 19231.7,
+      "2026": 20375.9,
       "2019": 14572.4,
-      "10yr_Median": 16647.1
+      "10yr_Median": 18230.6
     },
     "Population": {
-      "2025": 1405.1,
+      "2026": 1401.9,
       "2019": 1410.1,
       "10yr_Median": 1409.0
     },
     "Real GDP growth (%)": {
-      "2025": 4.0,
+      "2026": 4.0,
       "2019": 6.1,
-      "10yr_Median": 5.7
+      "10yr_Median": 5.2
     },
     "Inflation, consumer prices (%)": {
-      "2025": -0.0,
+      "2026": 0.6,
       "2019": 2.9,
-      "10yr_Median": 1.8
+      "10yr_Median": 1.2
     },
     "National savings (% of GDP)": {
-      "2025": 42.4,
+      "2026": 42.4,
       "2019": 43.3,
-      "10yr_Median": 43.7
+      "10yr_Median": 43.5
     },
     "Total investment (% of GDP)": {
-      "2025": 40.5,
+      "2026": 40.7,
       "2019": 42.6,
       "10yr_Median": 42.3
     },
     "Current account balance (% of GDP)": {
-      "2025": 1.9,
+      "2026": 1.7,
       "2019": 0.7,
       "10yr_Median": 1.7
     },
     "General government revenue (% of GDP)": {
-      "2025": 25.1,
+      "2026": 25.3,
       "2019": 27.6,
-      "10yr_Median": 26.0
+      "10yr_Median": 25.8
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 33.7,
+      "2026": 33.8,
       "2019": 33.6,
-      "10yr_Median": 32.7
+      "10yr_Median": 32.8
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -8.6,
+      "2026": -8.5,
       "2019": -6.0,
-      "10yr_Median": -6.4
+      "10yr_Median": -7.0
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -7.3,
+      "2026": -7.0,
       "2019": -5.2,
-      "10yr_Median": -5.5
+      "10yr_Median": -6.1
     },
     "General government gross debt (% of GDP)": {
-      "2025": 96.3,
+      "2026": 102.3,
       "2019": 59.4,
-      "10yr_Median": 69.6
+      "10yr_Median": 72.8
     }
   },
   "CIV": {
     "GDP (US Dollars)": {
-      "2025": 94.5,
+      "2026": 103.1,
       "2019": 60.4,
-      "10yr_Median": 67.1
+      "10yr_Median": 72.0
     },
     "Population": {
-      "2025": 32.9,
+      "2026": 33.8,
       "2019": 27.8,
-      "10yr_Median": 29.0
+      "10yr_Median": 29.8
     },
     "Real GDP growth (%)": {
-      "2025": 6.3,
+      "2026": 6.4,
       "2019": 6.7,
       "10yr_Median": 6.4
     },
     "Inflation, consumer prices (%)": {
-      "2025": 3.0,
+      "2026": 2.2,
       "2019": 0.8,
       "10yr_Median": 2.7
     },
     "National savings (% of GDP)": {
-      "2025": 24.7,
+      "2026": 28.0,
       "2019": 18.9,
       "10yr_Median": 19.1
     },
     "Total investment (% of GDP)": {
-      "2025": 28.3,
+      "2026": 30.1,
       "2019": 22.0,
-      "10yr_Median": 23.4
+      "10yr_Median": 24.8
     },
     "Current account balance (% of GDP)": {
-      "2025": -3.6,
+      "2026": -2.1,
       "2019": -2.2,
       "10yr_Median": -3.7
     },
     "General government revenue (% of GDP)": {
-      "2025": 17.4,
+      "2026": 17.9,
       "2019": 15.0,
-      "10yr_Median": 15.0
+      "10yr_Median": 15.4
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 20.4,
+      "2026": 20.8,
       "2019": 17.2,
       "10yr_Median": 20.4
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.0,
+      "2026": -3.0,
       "2019": -2.2,
       "10yr_Median": -3.6
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.2,
+      "2026": -0.6,
       "2019": -0.7,
-      "10yr_Median": -1.9
+      "10yr_Median": -1.8
     },
     "General government gross debt (% of GDP)": {
-      "2025": 58.1,
+      "2026": 56.4,
       "2019": 37.2,
-      "10yr_Median": 48.2
+      "10yr_Median": 53.1
     }
   },
   "COL": {
     "GDP (US Dollars)": {
-      "2025": 427.8,
+      "2026": 445.6,
       "2019": 323.1,
-      "10yr_Median": 328.6
+      "10yr_Median": 339.9
     },
     "Population": {
-      "2025": 53.1,
+      "2026": 53.5,
       "2019": 49.4,
-      "10yr_Median": 50.8
+      "10yr_Median": 51.4
     },
     "Real GDP growth (%)": {
-      "2025": 2.4,
+      "2026": 2.6,
       "2019": 3.2,
-      "10yr_Median": 2.3
+      "10yr_Median": 2.5
     },
     "Inflation, consumer prices (%)": {
-      "2025": 4.7,
+      "2026": 3.1,
       "2019": 3.5,
-      "10yr_Median": 4.5
+      "10yr_Median": 3.9
     },
     "National savings (% of GDP)": {
-      "2025": 16.3,
+      "2026": 17.6,
       "2019": 16.8,
       "10yr_Median": 16.0
     },
     "Total investment (% of GDP)": {
-      "2025": 18.6,
+      "2026": 20.0,
       "2019": 21.4,
       "10yr_Median": 19.5
     },
     "Current account balance (% of GDP)": {
-      "2025": -2.3,
+      "2026": -2.4,
       "2019": -4.6,
-      "10yr_Median": -3.8
+      "10yr_Median": -3.3
     },
     "General government revenue (% of GDP)": {
-      "2025": 28.1,
+      "2026": 27.9,
       "2019": 29.4,
-      "10yr_Median": 27.9
+      "10yr_Median": 28.0
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 32.5,
+      "2026": 31.1,
       "2019": 32.9,
       "10yr_Median": 33.2
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -4.4,
+      "2026": -3.3,
       "2019": -3.5,
       "10yr_Median": -4.6
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.2,
+      "2026": 0.5,
       "2019": -1.0,
       "10yr_Median": -0.9
     },
     "General government gross debt (% of GDP)": {
-      "2025": 59.7,
+      "2026": 59.9,
       "2019": 51.0,
-      "10yr_Median": 57.6
+      "10yr_Median": 59.8
     }
   },
   "CRI": {
     "GDP (US Dollars)": {
-      "2025": 102.6,
+      "2026": 108.6,
       "2019": 64.4,
-      "10yr_Median": 64.7
+      "10yr_Median": 67.1
     },
     "Population": {
-      "2025": 5.4,
+      "2026": 5.4,
       "2019": 5.1,
       "10yr_Median": 5.2
     },
     "Real GDP growth (%)": {
-      "2025": 3.4,
+      "2026": 3.4,
       "2019": 2.4,
-      "10yr_Median": 4.2
+      "10yr_Median": 3.8
     },
     "Inflation, consumer prices (%)": {
-      "2025": 2.2,
+      "2026": 3.0,
       "2019": 2.1,
-      "10yr_Median": 1.7
+      "10yr_Median": 1.9
     },
     "National savings (% of GDP)": {
-      "2025": 13.8,
+      "2026": 13.7,
       "2019": 14.9,
-      "10yr_Median": 14.7
+      "10yr_Median": 14.4
     },
     "Total investment (% of GDP)": {
-      "2025": 15.6,
+      "2026": 15.4,
       "2019": 16.1,
-      "10yr_Median": 16.9
+      "10yr_Median": 16.1
     },
     "Current account balance (% of GDP)": {
-      "2025": -1.8,
+      "2026": -1.9,
       "2019": -1.2,
-      "10yr_Median": -2.0
+      "10yr_Median": -1.8
     },
     "General government revenue (% of GDP)": {
-      "2025": 15.1,
+      "2026": 15.1,
       "2019": 15.0,
-      "10yr_Median": 15.0
+      "10yr_Median": 15.1
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 18.3,
+      "2026": 17.9,
       "2019": 21.7,
       "10yr_Median": 19.0
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.2,
+      "2026": -2.8,
       "2019": -6.7,
-      "10yr_Median": -5.1
+      "10yr_Median": -4.4
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 1.3,
+      "2026": 1.5,
       "2019": -2.6,
-      "10yr_Median": -1.3
+      "10yr_Median": 0.4
     },
     "General government gross debt (% of GDP)": {
-      "2025": 59.7,
+      "2026": 59.0,
       "2019": 56.4,
       "10yr_Median": 59.7
     }
   },
   "DOM": {
     "GDP (US Dollars)": {
-      "2025": 127.8,
+      "2026": 135.1,
       "2019": 89.2,
-      "10yr_Median": 92.2
+      "10yr_Median": 104.4
     },
     "Population": {
-      "2025": 10.9,
+      "2026": 11.0,
       "2019": 10.4,
-      "10yr_Median": 10.5
+      "10yr_Median": 10.6
     },
     "Real GDP growth (%)": {
-      "2025": 4.0,
+      "2026": 4.8,
       "2019": 4.9,
-      "10yr_Median": 4.9
+      "10yr_Median": 4.8
     },
     "Inflation, consumer prices (%)": {
-      "2025": 4.3,
+      "2026": 4.0,
       "2019": 1.8,
-      "10yr_Median": 3.7
+      "10yr_Median": 3.9
     },
     "National savings (% of GDP)": {
-      "2025": 22.3,
+      "2026": 21.6,
       "2019": 23.9,
       "10yr_Median": 23.7
     },
     "Total investment (% of GDP)": {
-      "2025": 25.6,
+      "2026": 25.0,
       "2019": 25.2,
       "10yr_Median": 25.4
     },
     "Current account balance (% of GDP)": {
-      "2025": -3.3,
+      "2026": -3.4,
       "2019": -1.3,
-      "10yr_Median": -2.3
+      "10yr_Median": -3.1
     },
     "General government revenue (% of GDP)": {
-      "2025": 15.3,
+      "2026": 15.3,
       "2019": 14.4,
-      "10yr_Median": 14.8
+      "10yr_Median": 15.3
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 18.5,
+      "2026": 18.3,
       "2019": 17.8,
       "10yr_Median": 18.5
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.2,
+      "2026": -3.0,
       "2019": -3.5,
       "10yr_Median": -3.1
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 0.5,
+      "2026": 0.8,
       "2019": -0.7,
-      "10yr_Median": -0.3
+      "10yr_Median": 0.0
     },
     "General government gross debt (% of GDP)": {
-      "2025": 58.2,
+      "2026": 57.1,
       "2019": 53.5,
       "10yr_Median": 58.5
     }
   },
   "ECU": {
     "GDP (US Dollars)": {
-      "2025": 125.7,
+      "2026": 130.3,
       "2019": 107.6,
-      "10yr_Median": 107.5
+      "10yr_Median": 111.9
     },
     "Population": {
-      "2025": 18.1,
+      "2026": 18.2,
       "2019": 17.4,
-      "10yr_Median": 17.6
+      "10yr_Median": 17.7
     },
     "Real GDP growth (%)": {
-      "2025": 1.7,
+      "2026": 2.1,
       "2019": 0.2,
-      "10yr_Median": 1.4
+      "10yr_Median": 1.9
     },
     "Inflation, consumer prices (%)": {
-      "2025": 1.3,
+      "2026": 1.5,
       "2019": 0.3,
       "10yr_Median": 0.9
     },
     "National savings (% of GDP)": {
-      "2025": 24.0,
+      "2026": 24.3,
       "2019": 20.5,
-      "10yr_Median": 22.3
+      "10yr_Median": 23.0
     },
     "Total investment (% of GDP)": {
-      "2025": 20.6,
+      "2026": 21.7,
       "2019": 21.0,
-      "10yr_Median": 20.7
+      "10yr_Median": 20.9
     },
     "Current account balance (% of GDP)": {
-      "2025": 3.4,
+      "2026": 2.6,
       "2019": -0.5,
-      "10yr_Median": 1.8
+      "10yr_Median": 2.0
     },
     "General government revenue (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": 36.3,
-      "10yr_Median": 36.0
+      "10yr_Median": 36.1
     },
     "General government total expenditure (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": 39.8,
-      "10yr_Median": 39.8
+      "10yr_Median": 39.6
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": -3.5,
-      "10yr_Median": -3.5
+      "10yr_Median": -3.1
     },
     "General government net borrowing (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": -1.9,
-      "10yr_Median": -1.9
+      "10yr_Median": -1.7
     },
     "General government gross debt (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": 52.1,
-      "10yr_Median": 54.3
+      "10yr_Median": 54.7
     }
   },
   "EGY": {
     "GDP (US Dollars)": {
-      "2025": 347.3,
+      "2026": 389.0,
       "2019": 317.9,
-      "10yr_Median": 367.0
+      "10yr_Median": 382.8
     },
     "Population": {
-      "2025": 109.4,
+      "2026": 111.6,
       "2019": 98.9,
-      "10yr_Median": 101.4
+      "10yr_Median": 102.8
     },
     "Real GDP growth (%)": {
-      "2025": 3.8,
+      "2026": 4.3,
       "2019": 5.5,
       "10yr_Median": 4.0
     },
     "Inflation, consumer prices (%)": {
-      "2025": 19.7,
+      "2026": 12.5,
       "2019": 13.9,
       "10yr_Median": 16.8
     },
     "National savings (% of GDP)": {
-      "2025": 5.7,
+      "2026": 8.6,
       "2019": 17.2,
       "10yr_Median": 14.6
     },
     "Total investment (% of GDP)": {
-      "2025": 11.5,
+      "2026": 12.3,
       "2019": 20.6,
       "10yr_Median": 18.5
     },
     "Current account balance (% of GDP)": {
-      "2025": -5.8,
+      "2026": -3.7,
       "2019": -3.4,
-      "10yr_Median": -3.9
+      "10yr_Median": -3.6
     },
     "General government revenue (% of GDP)": {
-      "2025": 16.7,
+      "2026": 18.0,
       "2019": 19.3,
-      "10yr_Median": 18.9
+      "10yr_Median": 18.4
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 28.9,
+      "2026": 28.0,
       "2019": 26.9,
       "10yr_Median": 26.3
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -12.1,
+      "2026": -10.1,
       "2019": -7.6,
       "10yr_Median": -7.5
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 2.3,
+      "2026": 2.6,
       "2019": 1.3,
       "10yr_Median": 1.1
     },
     "General government gross debt (% of GDP)": {
-      "2025": 86.6,
+      "2026": 85.1,
       "2019": 80.1,
-      "10yr_Median": 89.2
+      "10yr_Median": 88.2
     }
   },
   "GHA": {
     "GDP (US Dollars)": {
-      "2025": 88.3,
+      "2026": 92.3,
       "2019": 68.4,
-      "10yr_Median": 72.0
+      "10yr_Median": 76.7
     },
     "Population": {
-      "2025": 35.1,
+      "2026": 35.7,
       "2019": 31.3,
-      "10yr_Median": 32.2
+      "10yr_Median": 32.8
     },
     "Real GDP growth (%)": {
-      "2025": 4.0,
+      "2026": 4.8,
       "2019": 6.5,
-      "10yr_Median": 4.6
+      "10yr_Median": 4.9
     },
     "Inflation, consumer prices (%)": {
-      "2025": 17.2,
+      "2026": 9.4,
       "2019": 7.2,
-      "10yr_Median": 14.8
+      "10yr_Median": 11.2
     },
     "National savings (% of GDP)": {
-      "2025": 13.0,
+      "2026": 13.3,
       "2019": 17.4,
-      "10yr_Median": 16.0
+      "10yr_Median": 14.5
     },
     "Total investment (% of GDP)": {
-      "2025": 10.9,
+      "2026": 11.6,
       "2019": 18.6,
-      "10yr_Median": 17.6
+      "10yr_Median": 16.3
     },
     "Current account balance (% of GDP)": {
-      "2025": 1.6,
+      "2026": 1.3,
       "2019": -2.2,
-      "10yr_Median": -2.4
+      "10yr_Median": -2.3
     },
     "General government revenue (% of GDP)": {
-      "2025": 16.0,
+      "2026": 16.7,
       "2019": 15.0,
-      "10yr_Median": 15.1
+      "10yr_Median": 15.2
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 18.8,
+      "2026": 18.7,
       "2019": 22.5,
       "10yr_Median": 21.7
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -2.8,
+      "2026": -2.0,
       "2019": -7.5,
       "10yr_Median": -7.2
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 1.5,
+      "2026": 1.5,
       "2019": -2.0,
       "10yr_Median": -1.7
     },
     "General government gross debt (% of GDP)": {
-      "2025": 66.4,
+      "2026": 62.7,
       "2019": 58.3,
       "10yr_Median": 68.5
     }
   },
   "GTM": {
     "GDP (US Dollars)": {
-      "2025": 121.2,
+      "2026": 131.2,
       "2019": 77.2,
-      "10yr_Median": 82.1
+      "10yr_Median": 91.0
     },
     "Population": {
-      "2025": 18.1,
+      "2026": 18.3,
       "2019": 16.6,
-      "10yr_Median": 17.0
+      "10yr_Median": 17.2
     },
     "Real GDP growth (%)": {
-      "2025": 4.1,
+      "2026": 3.8,
       "2019": 4.0,
-      "10yr_Median": 3.6
+      "10yr_Median": 3.7
     },
     "Inflation, consumer prices (%)": {
-      "2025": 3.0,
+      "2026": 4.3,
       "2019": 3.7,
       "10yr_Median": 4.0
     },
     "National savings (% of GDP)": {
-      "2025": 19.0,
+      "2026": 18.1,
       "2019": 16.7,
-      "10yr_Median": 18.2
+      "10yr_Median": 18.3
     },
     "Total investment (% of GDP)": {
-      "2025": 16.7,
+      "2026": 16.7,
       "2019": 14.3,
-      "10yr_Median": 15.4
+      "10yr_Median": 16.5
     },
     "Current account balance (% of GDP)": {
-      "2025": 2.3,
+      "2026": 1.5,
       "2019": 2.4,
       "10yr_Median": 2.2
     },
     "General government revenue (% of GDP)": {
-      "2025": 12.4,
+      "2026": 12.4,
       "2019": 11.2,
-      "10yr_Median": 11.9
+      "10yr_Median": 12.4
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 14.9,
+      "2026": 15.0,
       "2019": 13.4,
-      "10yr_Median": 13.5
+      "10yr_Median": 13.6
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -2.5,
+      "2026": -2.5,
       "2019": -2.2,
-      "10yr_Median": -1.5
+      "10yr_Median": -1.8
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.8,
+      "2026": -0.9,
       "2019": -0.6,
-      "10yr_Median": 0.0
+      "10yr_Median": -0.2
     },
     "General government gross debt (% of GDP)": {
-      "2025": 27.2,
+      "2026": 27.7,
       "2019": 26.4,
-      "10yr_Median": 26.8
+      "10yr_Median": 27.2
     }
   },
   "HUN": {
     "GDP (US Dollars)": {
-      "2025": 237.1,
+      "2026": 253.1,
       "2019": 164.9,
-      "10yr_Median": 171.6
+      "10yr_Median": 180.8
     },
     "Population": {
-      "2025": 9.6,
+      "2026": 9.5,
       "2019": 9.7,
-      "10yr_Median": 9.7
+      "10yr_Median": 9.6
     },
     "Real GDP growth (%)": {
-      "2025": 1.4,
+      "2026": 2.6,
       "2019": 5.1,
       "10yr_Median": 3.3
     },
     "Inflation, consumer prices (%)": {
-      "2025": 4.9,
+      "2026": 3.6,
       "2019": 3.4,
-      "10yr_Median": 3.5
+      "10yr_Median": 3.6
     },
     "National savings (% of GDP)": {
-      "2025": 24.4,
+      "2026": 24.5,
       "2019": 28.1,
-      "10yr_Median": 26.3
+      "10yr_Median": 26.1
     },
     "Total investment (% of GDP)": {
-      "2025": 23.3,
+      "2026": 23.4,
       "2019": 28.5,
       "10yr_Median": 26.4
     },
     "Current account balance (% of GDP)": {
-      "2025": 1.0,
+      "2026": 1.1,
       "2019": -0.6,
       "10yr_Median": 0.3
     },
     "General government revenue (% of GDP)": {
-      "2025": 42.2,
+      "2026": 42.9,
       "2019": 43.8,
-      "10yr_Median": 43.0
+      "10yr_Median": 42.7
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 46.7,
+      "2026": 47.1,
       "2019": 45.8,
-      "10yr_Median": 46.8
+      "10yr_Median": 47.0
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -4.6,
+      "2026": -4.2,
       "2019": -2.0,
       "10yr_Median": -4.8
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.4,
+      "2026": -0.8,
       "2019": 0.1,
-      "10yr_Median": -0.6
+      "10yr_Median": -0.8
     },
     "General government gross debt (% of GDP)": {
-      "2025": 73.5,
+      "2026": 73.4,
       "2019": 65.0,
       "10yr_Median": 73.5
     }
   },
   "JAM": {
     "GDP (US Dollars)": {
-      "2025": 21.4,
+      "2026": 22.2,
       "2019": 15.8,
-      "10yr_Median": 15.7
+      "10yr_Median": 16.4
     },
     "Population": {
-      "2025": 2.8,
+      "2026": 2.8,
       "2019": 2.7,
       "10yr_Median": 2.7
     },
     "Real GDP growth (%)": {
-      "2025": 2.1,
+      "2026": 1.6,
       "2019": 1.0,
       "10yr_Median": 1.7
     },
     "Inflation, consumer prices (%)": {
-      "2025": 5.0,
+      "2026": 5.0,
       "2019": 3.9,
       "10yr_Median": 5.1
     },
     "National savings (% of GDP)": {
-      "2025": 25.5,
+      "2026": 25.9,
       "2019": 22.8,
-      "10yr_Median": 22.5
+      "10yr_Median": 23.0
     },
     "Total investment (% of GDP)": {
-      "2025": 24.5,
+      "2026": 26.1,
       "2019": 24.3,
-      "10yr_Median": 23.6
+      "10yr_Median": 23.8
     },
     "Current account balance (% of GDP)": {
-      "2025": 0.9,
+      "2026": -0.3,
       "2019": -1.9,
       "10yr_Median": -0.6
     },
     "General government revenue (% of GDP)": {
-      "2025": 31.7,
+      "2026": 30.0,
       "2019": 30.6,
       "10yr_Median": 30.6
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 31.7,
+      "2026": 30.4,
       "2019": 29.7,
-      "10yr_Median": 29.9
+      "10yr_Median": 30.3
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": 0.0,
+      "2026": -0.4,
       "2019": 0.9,
       "10yr_Median": 0.3
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 5.2,
+      "2026": 4.2,
       "2019": 7.1,
-      "10yr_Median": 6.4
+      "10yr_Median": 5.9
     },
     "General government gross debt (% of GDP)": {
-      "2025": 64.6,
+      "2026": 62.2,
       "2019": 94.3,
-      "10yr_Median": 94.2
+      "10yr_Median": 85.6
     }
   },
   "JOR": {
     "GDP (US Dollars)": {
-      "2025": 56.1,
+      "2026": 59.2,
       "2019": 44.6,
-      "10yr_Median": 45.5
+      "10yr_Median": 47.5
     },
     "Population": {
-      "2025": 11.4,
+      "2026": 11.5,
       "2019": 10.7,
-      "10yr_Median": 11.0
+      "10yr_Median": 11.2
     },
     "Real GDP growth (%)": {
-      "2025": 2.6,
+      "2026": 2.9,
       "2019": 1.8,
       "10yr_Median": 2.5
     },
     "Inflation, consumer prices (%)": {
-      "2025": 3.6,
+      "2026": 2.6,
       "2019": 0.8,
-      "10yr_Median": 1.7
+      "10yr_Median": 2.3
     },
     "National savings (% of GDP)": {
-      "2025": 14.1,
+      "2026": 13.1,
       "2019": 17.0,
-      "10yr_Median": 13.4
+      "10yr_Median": 13.1
     },
     "Total investment (% of GDP)": {
-      "2025": 19.6,
+      "2026": 18.9,
       "2019": 18.8,
-      "10yr_Median": 19.6
+      "10yr_Median": 19.3
     },
     "Current account balance (% of GDP)": {
-      "2025": -5.5,
+      "2026": -5.8,
       "2019": -1.7,
-      "10yr_Median": -6.3
+      "10yr_Median": -5.8
     },
     "General government revenue (% of GDP)": {
-      "2025": 26.0,
+      "2026": 26.0,
       "2019": 24.3,
-      "10yr_Median": 25.1
+      "10yr_Median": 25.2
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 31.3,
+      "2026": 30.5,
       "2019": 30.1,
       "10yr_Median": 31.5
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -5.3,
+      "2026": -4.6,
       "2019": -5.8,
       "10yr_Median": -6.4
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 0.3,
+      "2026": 1.0,
       "2019": -2.3,
       "10yr_Median": -2.5
     },
     "General government gross debt (% of GDP)": {
-      "2025": 92.6,
+      "2026": 88.6,
       "2019": 78.0,
-      "10yr_Median": 90.3
+      "10yr_Median": 90.6
     }
   },
   "KAZ": {
     "GDP (US Dollars)": {
-      "2025": 300.5,
+      "2026": 325.1,
       "2019": 181.7,
-      "10yr_Median": 189.4
+      "10yr_Median": 211.3
     },
     "Population": {
-      "2025": 20.4,
+      "2026": 20.6,
       "2019": 18.5,
-      "10yr_Median": 18.9
+      "10yr_Median": 19.3
     },
     "Real GDP growth (%)": {
-      "2025": 4.9,
+      "2026": 4.3,
       "2019": 4.5,
-      "10yr_Median": 4.1
+      "10yr_Median": 4.2
     },
     "Inflation, consumer prices (%)": {
-      "2025": 9.9,
+      "2026": 9.4,
       "2019": 5.3,
       "10yr_Median": 8.3
     },
     "National savings (% of GDP)": {
-      "2025": 22.9,
+      "2026": 23.2,
       "2019": 23.8,
       "10yr_Median": 24.3
     },
     "Total investment (% of GDP)": {
-      "2025": 26.5,
+      "2026": 26.9,
       "2019": 27.6,
       "10yr_Median": 26.6
     },
     "Current account balance (% of GDP)": {
-      "2025": -3.6,
+      "2026": -3.7,
       "2019": -3.9,
       "10yr_Median": -2.8
     },
     "General government revenue (% of GDP)": {
-      "2025": 17.5,
+      "2026": 17.0,
       "2019": 19.7,
       "10yr_Median": 19.6
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 20.6,
+      "2026": 20.4,
       "2019": 20.2,
-      "10yr_Median": 21.6
+      "10yr_Median": 21.4
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.1,
+      "2026": -3.4,
       "2019": -0.6,
       "10yr_Median": -2.4
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -2.5,
+      "2026": -2.7,
       "2019": -0.8,
       "10yr_Median": -1.6
     },
     "General government gross debt (% of GDP)": {
-      "2025": 25.4,
+      "2026": 27.9,
       "2019": 19.9,
-      "10yr_Median": 23.3
+      "10yr_Median": 24.2
     }
   },
   "KEN": {
     "GDP (US Dollars)": {
-      "2025": 131.7,
+      "2026": 128.0,
       "2019": 100.3,
-      "10yr_Median": 104.8
+      "10yr_Median": 109.3
     },
     "Population": {
-      "2025": 53.4,
+      "2026": 54.3,
       "2019": 47.6,
-      "10yr_Median": 49.3
+      "10yr_Median": 50.2
     },
     "Real GDP growth (%)": {
-      "2025": 4.8,
+      "2026": 4.9,
       "2019": 5.1,
-      "10yr_Median": 4.8
+      "10yr_Median": 4.9
     },
     "Inflation, consumer prices (%)": {
-      "2025": 4.1,
+      "2026": 4.9,
       "2019": 5.2,
-      "10yr_Median": 5.7
+      "10yr_Median": 5.3
     },
     "National savings (% of GDP)": {
-      "2025": 13.4,
+      "2026": 13.9,
       "2019": 14.1,
-      "10yr_Median": 14.0
+      "10yr_Median": 13.9
     },
     "Total investment (% of GDP)": {
-      "2025": 17.3,
+      "2026": 18.1,
       "2019": 19.3,
-      "10yr_Median": 19.3
+      "10yr_Median": 19.2
     },
     "Current account balance (% of GDP)": {
-      "2025": -3.9,
+      "2026": -4.2,
       "2019": -5.2,
-      "10yr_Median": -5.1
+      "10yr_Median": -4.9
     },
     "General government revenue (% of GDP)": {
-      "2025": 17.6,
+      "2026": 18.1,
       "2019": 17.0,
       "10yr_Median": 17.2
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 23.0,
+      "2026": 23.1,
       "2019": 24.4,
-      "10yr_Median": 24.2
+      "10yr_Median": 23.6
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -5.4,
+      "2026": -5.0,
       "2019": -7.4,
-      "10yr_Median": -7.1
+      "10yr_Median": -6.5
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.0,
+      "2026": 0.5,
       "2019": -3.8,
-      "10yr_Median": -3.3
+      "10yr_Median": -2.4
     },
     "General government gross debt (% of GDP)": {
-      "2025": 68.3,
+      "2026": 70.2,
       "2019": 59.1,
-      "10yr_Median": 66.7
+      "10yr_Median": 67.9
     }
   },
   "LKA": {
     "GDP (US Dollars)": {
-      "2025": null,
+      "2026": null,
       "2019": 89.0,
-      "10yr_Median": 88.6
+      "10yr_Median": 88.8
     },
     "Population": {
-      "2025": null,
+      "2026": null,
       "2019": 21.8,
-      "10yr_Median": 21.9
+      "10yr_Median": 22.0
     },
     "Real GDP growth (%)": {
-      "2025": null,
+      "2026": null,
       "2019": -0.2,
-      "10yr_Median": 2.3
+      "10yr_Median": 1.0
     },
     "Inflation, consumer prices (%)": {
-      "2025": null,
+      "2026": null,
       "2019": 4.3,
-      "10yr_Median": 4.6
+      "10yr_Median": 5.3
     },
     "National savings (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": 32.0,
-      "10yr_Median": 32.0
+      "10yr_Median": 31.8
     },
     "Total investment (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": 34.1,
-      "10yr_Median": 34.1
+      "10yr_Median": 33.5
     },
     "Current account balance (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": -2.1,
-      "10yr_Median": -2.0
+      "10yr_Median": -1.7
     },
     "General government revenue (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": 11.9,
-      "10yr_Median": 11.9
+      "10yr_Median": 11.6
     },
     "General government total expenditure (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": 19.5,
-      "10yr_Median": 19.3
+      "10yr_Median": 19.4
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": -7.5,
-      "10yr_Median": -7.5
+      "10yr_Median": -7.9
     },
     "General government net borrowing (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": -1.9,
-      "10yr_Median": -0.2
+      "10yr_Median": -0.9
     },
     "General government gross debt (% of GDP)": {
-      "2025": null,
+      "2026": null,
       "2019": 82.6,
-      "10yr_Median": 96.9
+      "10yr_Median": 98.2
     }
   },
   "LVA": {
     "GDP (US Dollars)": {
-      "2025": 45.5,
+      "2026": 48.4,
       "2019": 33.1,
-      "10yr_Median": 35.7
+      "10yr_Median": 38.1
     },
     "Population": {
-      "2025": 1.9,
+      "2026": 1.9,
       "2019": 1.9,
       "10yr_Median": 1.9
     },
     "Real GDP growth (%)": {
-      "2025": 2.0,
+      "2026": 2.5,
       "2019": 0.7,
-      "10yr_Median": 2.3
+      "10yr_Median": 2.2
     },
     "Inflation, consumer prices (%)": {
-      "2025": 2.4,
+      "2026": 2.4,
       "2019": 2.7,
       "10yr_Median": 2.7
     },
     "National savings (% of GDP)": {
-      "2025": 19.2,
+      "2026": 19.2,
       "2019": 23.2,
-      "10yr_Median": 22.4
+      "10yr_Median": 21.2
     },
     "Total investment (% of GDP)": {
-      "2025": 21.7,
+      "2026": 21.6,
       "2019": 23.3,
       "10yr_Median": 23.0
     },
     "Current account balance (% of GDP)": {
-      "2025": -2.5,
+      "2026": -2.4,
       "2019": -0.2,
-      "10yr_Median": -1.3
+      "10yr_Median": -2.3
     },
     "General government revenue (% of GDP)": {
-      "2025": 40.7,
+      "2026": 41.0,
       "2019": 38.6,
-      "10yr_Median": 38.8
+      "10yr_Median": 39.2
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 44.4,
+      "2026": 44.0,
       "2019": 39.0,
-      "10yr_Median": 42.9
+      "10yr_Median": 43.3
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.6,
+      "2026": -3.0,
       "2019": -0.4,
-      "10yr_Median": -2.6
+      "10yr_Median": -3.2
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -2.5,
+      "2026": -1.7,
       "2019": 0.5,
-      "10yr_Median": -1.7
+      "10yr_Median": -2.1
     },
     "General government gross debt (% of GDP)": {
-      "2025": 48.3,
+      "2026": 48.3,
       "2019": 37.9,
-      "10yr_Median": 44.2
+      "10yr_Median": 44.5
     }
   },
   "MAR": {
     "GDP (US Dollars)": {
-      "2025": 165.8,
+      "2026": 176.6,
       "2019": 128.9,
-      "10yr_Median": 129.9
+      "10yr_Median": 136.5
     },
     "Population": {
-      "2025": 37.7,
+      "2026": 38.0,
       "2019": 35.6,
-      "10yr_Median": 36.1
+      "10yr_Median": 36.5
     },
     "Real GDP growth (%)": {
-      "2025": 3.9,
+      "2026": 3.7,
       "2019": 2.9,
-      "10yr_Median": 3.1
+      "10yr_Median": 3.3
     },
     "Inflation, consumer prices (%)": {
-      "2025": 2.2,
+      "2026": 2.3,
       "2019": 0.2,
       "10yr_Median": 1.5
     },
     "National savings (% of GDP)": {
-      "2025": 26.4,
+      "2026": 25.9,
       "2019": 27.0,
-      "10yr_Median": 27.5
+      "10yr_Median": 27.3
     },
     "Total investment (% of GDP)": {
-      "2025": 28.5,
+      "2026": 28.3,
       "2019": 30.4,
-      "10yr_Median": 30.3
+      "10yr_Median": 29.6
     },
     "Current account balance (% of GDP)": {
-      "2025": -2.0,
+      "2026": -2.2,
       "2019": -3.4,
-      "10yr_Median": -2.8
+      "10yr_Median": -2.3
     },
     "General government revenue (% of GDP)": {
-      "2025": 30.4,
+      "2026": 29.4,
       "2019": 23.8,
-      "10yr_Median": 26.0
+      "10yr_Median": 27.4
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 34.3,
+      "2026": 32.8,
       "2019": 27.7,
-      "10yr_Median": 31.7
+      "10yr_Median": 32.6
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.9,
+      "2026": -3.4,
       "2019": -3.9,
-      "10yr_Median": -4.3
+      "10yr_Median": -4.0
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -1.3,
+      "2026": -0.9,
       "2019": -1.4,
-      "10yr_Median": -1.9
+      "10yr_Median": -1.6
     },
     "General government gross debt (% of GDP)": {
-      "2025": 68.9,
+      "2026": 67.7,
       "2019": 60.3,
       "10yr_Median": 69.1
     }
   },
   "MEX": {
     "GDP (US Dollars)": {
-      "2025": 1692.6,
+      "2026": 1775.3,
       "2019": 1304.1,
-      "10yr_Median": 1310.3
+      "10yr_Median": 1391.5
     },
     "Population": {
-      "2025": 133.4,
+      "2026": 134.4,
       "2019": 127.2,
-      "10yr_Median": 128.6
+      "10yr_Median": 129.5
     },
     "Real GDP growth (%)": {
-      "2025": -0.3,
+      "2026": 1.4,
       "2019": -0.4,
-      "10yr_Median": 1.8
+      "10yr_Median": 1.7
     },
     "Inflation, consumer prices (%)": {
-      "2025": 3.5,
+      "2026": 3.2,
       "2019": 3.6,
       "10yr_Median": 4.8
     },
     "National savings (% of GDP)": {
-      "2025": 24.0,
+      "2026": 23.1,
       "2019": 21.9,
-      "10yr_Median": 22.1
+      "10yr_Median": 22.4
     },
     "Total investment (% of GDP)": {
-      "2025": 24.5,
+      "2026": 24.3,
       "2019": 22.1,
       "10yr_Median": 23.7
     },
     "Current account balance (% of GDP)": {
-      "2025": -0.5,
+      "2026": -1.1,
       "2019": -0.3,
       "10yr_Median": -0.4
     },
     "General government revenue (% of GDP)": {
-      "2025": 25.0,
+      "2026": 24.3,
       "2019": 23.0,
-      "10yr_Median": 23.9
+      "10yr_Median": 24.1
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 29.0,
+      "2026": 27.6,
       "2019": 25.3,
-      "10yr_Median": 27.2
+      "10yr_Median": 27.7
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -4.0,
+      "2026": -3.3,
       "2019": -2.3,
       "10yr_Median": -3.9
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 1.6,
+      "2026": 1.9,
       "2019": 2.1,
-      "10yr_Median": 1.1
+      "10yr_Median": 1.5
     },
     "General government gross debt (% of GDP)": {
-      "2025": 60.7,
+      "2026": 61.1,
       "2019": 51.9,
-      "10yr_Median": 54.4
+      "10yr_Median": 55.3
     }
   },
   "MYS": {
     "GDP (US Dollars)": {
-      "2025": 445.0,
+      "2026": 475.1,
       "2019": 365.2,
-      "10yr_Median": 369.5
+      "10yr_Median": 386.7
     },
     "Population": {
-      "2025": 33.9,
+      "2026": 34.2,
       "2019": 32.5,
-      "10yr_Median": 32.5
+      "10yr_Median": 32.6
     },
     "Real GDP growth (%)": {
-      "2025": 4.1,
+      "2026": 3.8,
       "2019": 4.4,
-      "10yr_Median": 4.4
+      "10yr_Median": 4.3
     },
     "Inflation, consumer prices (%)": {
-      "2025": 2.4,
+      "2026": 2.2,
       "2019": 0.7,
       "10yr_Median": 2.3
     },
     "National savings (% of GDP)": {
-      "2025": 23.5,
+      "2026": 23.1,
       "2019": 24.5,
-      "10yr_Median": 25.3
+      "10yr_Median": 24.3
     },
     "Total investment (% of GDP)": {
-      "2025": 21.9,
+      "2026": 21.4,
       "2019": 21.0,
-      "10yr_Median": 22.3
+      "10yr_Median": 22.0
     },
     "Current account balance (% of GDP)": {
-      "2025": 1.6,
+      "2026": 1.8,
       "2019": 3.5,
-      "10yr_Median": 2.6
+      "10yr_Median": 2.5
     },
     "General government revenue (% of GDP)": {
-      "2025": 19.7,
+      "2026": 19.0,
       "2019": 21.6,
-      "10yr_Median": 20.1
+      "10yr_Median": 20.0
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 23.1,
+      "2026": 22.5,
       "2019": 23.6,
       "10yr_Median": 23.7
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.4,
+      "2026": -3.4,
       "2019": -2.0,
       "10yr_Median": -3.7
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -1.3,
+      "2026": -1.1,
       "2019": -0.0,
       "10yr_Median": -1.6
     },
     "General government gross debt (% of GDP)": {
-      "2025": 70.1,
+      "2026": 69.8,
       "2019": 57.1,
-      "10yr_Median": 66.6
+      "10yr_Median": 68.4
     }
   },
   "NGA": {
     "GDP (US Dollars)": {
-      "2025": 188.3,
+      "2026": 192.3,
       "2019": 474.5,
-      "10yr_Median": 413.4
+      "10yr_Median": 398.7
     },
     "Population": {
-      "2025": 233.3,
+      "2026": 239.1,
       "2019": 201.0,
-      "10yr_Median": 208.8
+      "10yr_Median": 214.1
     },
     "Real GDP growth (%)": {
-      "2025": 3.0,
+      "2026": 2.7,
       "2019": 2.2,
-      "10yr_Median": 2.5
+      "10yr_Median": 2.8
     },
     "Inflation, consumer prices (%)": {
-      "2025": 26.5,
+      "2026": 37.0,
       "2019": 11.4,
-      "10yr_Median": 16.7
+      "10yr_Median": 17.9
     },
     "National savings (% of GDP)": {
-      "2025": 36.0,
+      "2026": 36.6,
       "2019": 22.5,
-      "10yr_Median": 28.0
+      "10yr_Median": 32.7
     },
     "Total investment (% of GDP)": {
-      "2025": 29.1,
+      "2026": 31.4,
       "2019": 25.4,
-      "10yr_Median": 28.3
+      "10yr_Median": 29.9
     },
     "Current account balance (% of GDP)": {
-      "2025": 6.9,
+      "2026": 5.2,
       "2019": -2.9,
-      "10yr_Median": 1.5
+      "10yr_Median": 1.7
     },
     "General government revenue (% of GDP)": {
-      "2025": 14.0,
+      "2026": 13.9,
       "2019": 7.8,
-      "10yr_Median": 8.2
+      "10yr_Median": 8.7
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 18.5,
+      "2026": 18.5,
       "2019": 12.5,
-      "10yr_Median": 12.7
+      "10yr_Median": 13.4
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -4.5,
+      "2026": -4.5,
       "2019": -4.7,
-      "10yr_Median": -4.7
+      "10yr_Median": -4.6
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.8,
+      "2026": -0.7,
       "2019": -2.8,
-      "10yr_Median": -2.9
+      "10yr_Median": -2.5
     },
     "General government gross debt (% of GDP)": {
-      "2025": 52.5,
+      "2026": 51.6,
       "2019": 30.2,
-      "10yr_Median": 36.2
+      "10yr_Median": 38.6
     }
   },
   "OMN": {
     "GDP (US Dollars)": {
-      "2025": 104.4,
+      "2026": 107.3,
       "2019": 88.1,
-      "10yr_Median": 89.8
+      "10yr_Median": 97.9
     },
     "Population": {
-      "2025": 5.5,
+      "2026": 5.7,
       "2019": 4.6,
-      "10yr_Median": 4.6
+      "10yr_Median": 4.8
     },
     "Real GDP growth (%)": {
-      "2025": 2.3,
+      "2026": 3.6,
       "2019": -1.1,
       "10yr_Median": 1.5
     },
     "Inflation, consumer prices (%)": {
-      "2025": 1.5,
+      "2026": 2.0,
       "2019": 0.5,
-      "10yr_Median": 0.9
+      "10yr_Median": 1.2
     },
     "National savings (% of GDP)": {
-      "2025": 25.0,
+      "2026": 24.8,
       "2019": 22.0,
-      "10yr_Median": 23.7
+      "10yr_Median": 24.9
     },
     "Total investment (% of GDP)": {
-      "2025": 26.5,
+      "2026": 27.3,
       "2019": 26.9,
-      "10yr_Median": 27.4
+      "10yr_Median": 27.3
     },
     "Current account balance (% of GDP)": {
-      "2025": -1.5,
+      "2026": -2.5,
       "2019": -4.9,
-      "10yr_Median": -4.9
+      "10yr_Median": -3.7
     },
     "General government revenue (% of GDP)": {
-      "2025": 29.4,
+      "2026": 28.6,
       "2019": 33.9,
       "10yr_Median": 32.5
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 28.2,
+      "2026": 27.5,
       "2019": 38.8,
-      "10yr_Median": 37.4
+      "10yr_Median": 33.7
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": 1.2,
+      "2026": 1.1,
       "2019": -4.8,
-      "10yr_Median": -4.0
+      "10yr_Median": -1.0
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 1.6,
+      "2026": 1.3,
       "2019": -4.6,
-      "10yr_Median": -2.8
+      "10yr_Median": 0.2
     },
     "General government gross debt (% of GDP)": {
-      "2025": 35.4,
+      "2026": 33.9,
       "2019": 52.5,
       "10yr_Median": 40.9
     }
   },
   "PAK": {
     "GDP (US Dollars)": {
-      "2025": null,
+      "2026": null,
       "2019": 321.1,
-      "10yr_Median": 339.2
+      "10yr_Median": 343.9
     },
     "Population": {
-      "2025": 240.5,
+      "2026": 245.2,
       "2019": 214.0,
-      "10yr_Median": 220.4
+      "10yr_Median": 224.8
     },
     "Real GDP growth (%)": {
-      "2025": 2.6,
+      "2026": 3.6,
       "2019": 3.1,
-      "10yr_Median": 3.6
+      "10yr_Median": 3.3
     },
     "Inflation, consumer prices (%)": {
-      "2025": 5.1,
+      "2026": 7.7,
       "2019": 6.8,
-      "10yr_Median": 7.8
+      "10yr_Median": 8.3
     },
     "National savings (% of GDP)": {
-      "2025": 13.5,
+      "2026": 13.9,
       "2019": 11.3,
       "10yr_Median": 12.9
     },
     "Total investment (% of GDP)": {
-      "2025": 13.5,
+      "2026": 14.3,
       "2019": 15.5,
-      "10yr_Median": 15.2
+      "10yr_Median": 14.7
     },
     "Current account balance (% of GDP)": {
-      "2025": -0.1,
+      "2026": -0.4,
       "2019": -4.2,
-      "10yr_Median": -1.5
+      "10yr_Median": -1.2
     },
     "General government revenue (% of GDP)": {
-      "2025": 15.9,
+      "2026": 15.2,
       "2019": 11.3,
       "10yr_Median": 12.9
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 21.6,
+      "2026": 20.3,
       "2019": 19.1,
-      "10yr_Median": 19.2
+      "10yr_Median": 19.3
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -5.6,
+      "2026": -5.1,
       "2019": -7.8,
       "10yr_Median": -6.4
     },
     "General government net borrowing (% of GDP)": {
-      "2025": 2.1,
+      "2026": 1.6,
       "2019": -3.0,
       "10yr_Median": -1.2
     },
     "General government gross debt (% of GDP)": {
-      "2025": 73.6,
+      "2026": 71.9,
       "2019": 78.7,
       "10yr_Median": 74.2
     }
   },
   "PAN": {
     "GDP (US Dollars)": {
-      "2025": 91.7,
+      "2026": 97.2,
       "2019": 69.7,
-      "10yr_Median": 68.6
+      "10yr_Median": 73.1
     },
     "Population": {
-      "2025": 4.6,
+      "2026": 4.6,
       "2019": 4.2,
-      "10yr_Median": 4.3
+      "10yr_Median": 4.4
     },
     "Real GDP growth (%)": {
-      "2025": 4.0,
+      "2026": 4.0,
       "2019": 3.3,
-      "10yr_Median": 4.5
+      "10yr_Median": 4.0
     },
     "Inflation, consumer prices (%)": {
-      "2025": 0.5,
+      "2026": 2.0,
       "2019": -0.4,
       "10yr_Median": 0.8
     },
     "National savings (% of GDP)": {
-      "2025": 42.7,
+      "2026": 42.4,
       "2019": 33.0,
-      "10yr_Median": 33.3
+      "10yr_Median": 34.3
     },
     "Total investment (% of GDP)": {
-      "2025": 43.7,
+      "2026": 44.2,
       "2019": 39.1,
-      "10yr_Median": 41.7
+      "10yr_Median": 42.0
     },
     "Current account balance (% of GDP)": {
-      "2025": -1.0,
+      "2026": -1.8,
       "2019": -5.1,
-      "10yr_Median": -2.8
+      "10yr_Median": -1.5
     },
     "General government revenue (% of GDP)": {
-      "2025": 17.8,
+      "2026": 18.1,
       "2019": 17.8,
       "10yr_Median": 17.7
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 21.8,
+      "2026": 21.6,
       "2019": 20.7,
-      "10yr_Median": 21.6
+      "10yr_Median": 21.7
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.9,
+      "2026": -3.5,
       "2019": -2.9,
       "10yr_Median": -3.9
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.5,
+      "2026": -0.5,
       "2019": -1.3,
       "10yr_Median": -1.3
     },
     "General government gross debt (% of GDP)": {
-      "2025": 58.1,
+      "2026": 58.3,
       "2019": 39.9,
-      "10yr_Median": 52.1
+      "10yr_Median": 53.6
     }
   },
   "PER": {
     "GDP (US Dollars)": {
-      "2025": 303.3,
+      "2026": 319.1,
       "2019": 233.0,
-      "10yr_Median": 230.3
+      "10yr_Median": 238.7
     },
     "Population": {
-      "2025": 34.4,
+      "2026": 34.8,
       "2019": 32.1,
-      "10yr_Median": 32.8
+      "10yr_Median": 33.2
     },
     "Real GDP growth (%)": {
-      "2025": 2.8,
+      "2026": 2.6,
       "2019": 2.2,
-      "10yr_Median": 2.8
+      "10yr_Median": 2.7
     },
     "Inflation, consumer prices (%)": {
-      "2025": 1.7,
+      "2026": 1.9,
       "2019": 2.1,
-      "10yr_Median": 2.6
+      "10yr_Median": 2.2
     },
     "National savings (% of GDP)": {
-      "2025": 19.6,
+      "2026": 19.4,
+      "2019": 19.7,
+      "10yr_Median": 19.5
+    },
+    "Total investment (% of GDP)": {
+      "2026": 18.1,
+      "2019": 20.3,
+      "10yr_Median": 19.3
+    },
+    "Current account balance (% of GDP)": {
+      "2026": 1.3,
+      "2019": -0.6,
+      "10yr_Median": 0.0
+    },
+    "General government revenue (% of GDP)": {
+      "2026": 19.6,
       "2019": 19.7,
       "10yr_Median": 19.6
     },
-    "Total investment (% of GDP)": {
-      "2025": 17.9,
-      "2019": 20.3,
-      "10yr_Median": 20.3
-    },
-    "Current account balance (% of GDP)": {
-      "2025": 1.7,
-      "2019": -0.6,
-      "10yr_Median": -0.7
-    },
-    "General government revenue (% of GDP)": {
-      "2025": 20.0,
-      "2019": 19.7,
-      "10yr_Median": 19.4
-    },
     "General government total expenditure (% of GDP)": {
-      "2025": 22.6,
+      "2026": 21.9,
       "2019": 21.1,
       "10yr_Median": 22.5
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -2.5,
+      "2026": -2.3,
       "2019": -1.4,
       "10yr_Median": -2.5
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.8,
+      "2026": -0.9,
       "2019": -0.2,
-      "10yr_Median": -1.2
+      "10yr_Median": -1.1
     },
     "General government gross debt (% of GDP)": {
-      "2025": 33.7,
+      "2026": 34.7,
       "2019": 26.9,
-      "10yr_Median": 32.9
+      "10yr_Median": 33.3
     }
   },
   "PHL": {
     "GDP (US Dollars)": {
-      "2025": 497.5,
+      "2026": 538.8,
       "2019": 376.8,
-      "10yr_Median": 385.5
+      "10yr_Median": 399.2
     },
     "Population": {
-      "2025": 114.4,
+      "2026": 115.6,
       "2019": 107.3,
-      "10yr_Median": 109.6
+      "10yr_Median": 110.5
     },
     "Real GDP growth (%)": {
-      "2025": 5.5,
+      "2026": 5.8,
       "2019": 6.1,
-      "10yr_Median": 5.9
+      "10yr_Median": 5.7
     },
     "Inflation, consumer prices (%)": {
-      "2025": 2.6,
+      "2026": 2.9,
       "2019": 2.4,
       "10yr_Median": 3.0
     },
     "National savings (% of GDP)": {
-      "2025": 19.2,
+      "2026": 19.7,
       "2019": 25.6,
-      "10yr_Median": 20.6
+      "10yr_Median": 20.4
     },
     "Total investment (% of GDP)": {
-      "2025": 22.6,
+      "2026": 22.8,
       "2019": 26.4,
-      "10yr_Median": 24.2
+      "10yr_Median": 23.5
     },
     "Current account balance (% of GDP)": {
-      "2025": -3.4,
+      "2026": -3.2,
       "2019": -0.8,
-      "10yr_Median": -2.0
+      "10yr_Median": -2.7
     },
     "General government revenue (% of GDP)": {
-      "2025": 20.2,
+      "2026": 20.2,
       "2019": 20.2,
       "10yr_Median": 20.3
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 24.1,
+      "2026": 23.1,
       "2019": 21.7,
       "10yr_Median": 24.4
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -3.9,
+      "2026": -2.9,
       "2019": -1.5,
       "10yr_Median": -3.9
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -1.2,
+      "2026": -0.2,
       "2019": 0.1,
       "10yr_Median": -1.3
     },
     "General government gross debt (% of GDP)": {
-      "2025": 58.1,
+      "2026": 58.1,
       "2019": 37.0,
-      "10yr_Median": 54.1
+      "10yr_Median": 56.7
     }
   },
   "POL": {
     "GDP (US Dollars)": {
-      "2025": 980.0,
+      "2026": 1040.6,
       "2019": 602.6,
-      "10yr_Median": 647.6
+      "10yr_Median": 692.5
     },
     "Population": {
-      "2025": 36.6,
+      "2026": 36.5,
       "2019": 38.0,
-      "10yr_Median": 37.5
+      "10yr_Median": 37.0
     },
     "Real GDP growth (%)": {
-      "2025": 3.2,
+      "2026": 3.1,
       "2019": 4.6,
       "10yr_Median": 3.9
     },
     "Inflation, consumer prices (%)": {
-      "2025": 4.3,
+      "2026": 3.4,
       "2019": 2.3,
       "10yr_Median": 3.6
     },
     "National savings (% of GDP)": {
-      "2025": 17.7,
+      "2026": 17.6,
       "2019": 20.4,
       "10yr_Median": 19.4
     },
     "Total investment (% of GDP)": {
-      "2025": 18.0,
+      "2026": 18.3,
       "2019": 20.7,
-      "10yr_Median": 20.0
+      "10yr_Median": 19.4
     },
     "Current account balance (% of GDP)": {
-      "2025": -0.3,
+      "2026": -0.7,
       "2019": -0.3,
-      "10yr_Median": -0.7
+      "10yr_Median": -0.5
     },
     "General government revenue (% of GDP)": {
-      "2025": 43.9,
+      "2026": 44.5,
       "2019": 40.7,
-      "10yr_Median": 40.8
+      "10yr_Median": 41.3
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 50.1,
+      "2026": 49.8,
       "2019": 41.4,
-      "10yr_Median": 43.4
+      "10yr_Median": 45.3
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -6.2,
+      "2026": -5.3,
       "2019": -0.7,
-      "10yr_Median": -2.9
+      "10yr_Median": -4.4
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -3.6,
+      "2026": -2.6,
       "2019": 0.6,
-      "10yr_Median": -1.3
+      "10yr_Median": -2.3
     },
     "General government gross debt (% of GDP)": {
-      "2025": 60.7,
+      "2026": 64.3,
       "2019": 45.2,
       "10yr_Median": 51.7
     }
   },
   "ROU": {
     "GDP (US Dollars)": {
-      "2025": 403.4,
+      "2026": 424.4,
       "2019": 251.7,
-      "10yr_Median": 269.6
+      "10yr_Median": 291.9
     },
     "Population": {
-      "2025": 18.8,
+      "2026": 18.7,
       "2019": 19.4,
-      "10yr_Median": 19.3
+      "10yr_Median": 19.1
     },
     "Real GDP growth (%)": {
-      "2025": 1.6,
+      "2026": 2.8,
       "2019": 3.9,
-      "10yr_Median": 3.4
+      "10yr_Median": 3.3
     },
     "Inflation, consumer prices (%)": {
-      "2025": 4.6,
+      "2026": 3.1,
       "2019": 3.8,
       "10yr_Median": 4.6
     },
     "National savings (% of GDP)": {
-      "2025": 17.8,
+      "2026": 21.4,
       "2019": 19.4,
       "10yr_Median": 19.1
     },
     "Total investment (% of GDP)": {
-      "2025": 25.4,
+      "2026": 28.8,
       "2019": 24.3,
-      "10yr_Median": 24.8
+      "10yr_Median": 25.4
     },
     "Current account balance (% of GDP)": {
-      "2025": -7.6,
+      "2026": -7.4,
       "2019": -4.8,
-      "10yr_Median": -5.8
+      "10yr_Median": -6.9
     },
     "General government revenue (% of GDP)": {
-      "2025": 31.4,
+      "2026": 32.3,
       "2019": 28.7,
-      "10yr_Median": 29.8
+      "10yr_Median": 30.7
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 39.2,
+      "2026": 40.0,
       "2019": 33.2,
-      "10yr_Median": 36.8
+      "10yr_Median": 37.2
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -7.8,
+      "2026": -7.6,
       "2019": -4.6,
-      "10yr_Median": -5.7
+      "10yr_Median": -6.3
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -5.5,
+      "2026": -5.1,
       "2019": -3.5,
-      "10yr_Median": -3.8
+      "10yr_Median": -4.5
     },
     "General government gross debt (% of GDP)": {
-      "2025": 61.6,
+      "2026": 65.7,
       "2019": 36.5,
-      "10yr_Median": 50.4
+      "10yr_Median": 51.6
     }
   },
   "SAU": {
     "GDP (US Dollars)": {
-      "2025": 1083.7,
+      "2026": 1122.5,
       "2019": 838.6,
-      "10yr_Median": 860.4
+      "10yr_Median": 970.9
     },
     "Population": {
-      "2025": 36.0,
+      "2026": 36.7,
       "2019": 30.1,
-      "10yr_Median": 31.3
+      "10yr_Median": 31.9
     },
     "Real GDP growth (%)": {
-      "2025": 3.0,
+      "2026": 3.7,
       "2019": 1.1,
-      "10yr_Median": 1.6
+      "10yr_Median": 2.1
     },
     "Inflation, consumer prices (%)": {
-      "2025": 2.0,
+      "2026": 2.0,
       "2019": -2.1,
       "10yr_Median": 2.2
     },
     "National savings (% of GDP)": {
-      "2025": 27.7,
+      "2026": 28.0,
       "2019": 32.9,
       "10yr_Median": 30.3
     },
     "Total investment (% of GDP)": {
-      "2025": 31.7,
+      "2026": 32.2,
       "2019": 28.3,
       "10yr_Median": 28.5
     },
     "Current account balance (% of GDP)": {
-      "2025": -4.0,
+      "2026": -4.3,
       "2019": 4.6,
       "10yr_Median": 2.5
     },
     "General government revenue (% of GDP)": {
-      "2025": 27.6,
+      "2026": 27.5,
       "2019": 29.5,
       "10yr_Median": 29.0
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 32.5,
+      "2026": 32.4,
       "2019": 33.7,
-      "10yr_Median": 33.1
+      "10yr_Median": 32.5
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -4.9,
+      "2026": -4.9,
       "2019": -4.2,
-      "10yr_Median": -4.6
+      "10yr_Median": -4.5
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -4.5,
+      "2026": -4.2,
       "2019": -4.2,
-      "10yr_Median": -4.4
+      "10yr_Median": -4.2
     },
     "General government gross debt (% of GDP)": {
-      "2025": 34.8,
+      "2026": 38.5,
       "2019": 21.6,
-      "10yr_Median": 25.0
+      "10yr_Median": 27.4
     }
   },
   "SRB": {
     "GDP (US Dollars)": {
-      "2025": 92.5,
+      "2026": 99.9,
       "2019": 53.9,
-      "10yr_Median": 60.9
+      "10yr_Median": 66.3
     },
     "Population": {
-      "2025": 6.5,
+      "2026": 6.5,
       "2019": 6.9,
-      "10yr_Median": 6.9
+      "10yr_Median": 6.7
     },
     "Real GDP growth (%)": {
-      "2025": 3.5,
+      "2026": 4.2,
       "2019": 4.8,
-      "10yr_Median": 3.7
+      "10yr_Median": 3.9
     },
     "Inflation, consumer prices (%)": {
-      "2025": 4.0,
+      "2026": 3.3,
       "2019": 1.8,
-      "10yr_Median": 3.6
+      "10yr_Median": 3.7
     },
     "National savings (% of GDP)": {
-      "2025": 18.7,
+      "2026": 18.6,
       "2019": 18.4,
       "10yr_Median": 19.0
     },
     "Total investment (% of GDP)": {
-      "2025": 24.5,
+      "2026": 24.4,
       "2019": 24.9,
       "10yr_Median": 24.5
     },
     "Current account balance (% of GDP)": {
-      "2025": -5.8,
+      "2026": -5.7,
       "2019": -6.6,
-      "10yr_Median": -4.8
+      "10yr_Median": -5.4
     },
     "General government revenue (% of GDP)": {
-      "2025": 40.6,
+      "2026": 40.7,
       "2019": 40.2,
-      "10yr_Median": 40.0
+      "10yr_Median": 40.4
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 43.4,
+      "2026": 43.5,
       "2019": 40.2,
-      "10yr_Median": 41.0
+      "10yr_Median": 41.9
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -2.8,
+      "2026": -2.8,
       "2019": -0.0,
-      "10yr_Median": -1.1
+      "10yr_Median": -1.5
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.7,
+      "2026": -0.7,
       "2019": 1.9,
-      "10yr_Median": 0.9
+      "10yr_Median": 0.3
     },
     "General government gross debt (% of GDP)": {
-      "2025": 44.4,
+      "2026": 44.1,
       "2019": 49.5,
-      "10yr_Median": 51.0
+      "10yr_Median": 50.2
     }
   },
   "TUR": {
     "GDP (US Dollars)": {
-      "2025": 1437.4,
+      "2026": 1401.5,
       "2019": 760.4,
-      "10yr_Median": 864.1
+      "10yr_Median": 882.4
     },
     "Population": {
-      "2025": 86.0,
+      "2026": 86.4,
       "2019": 82.6,
-      "10yr_Median": 83.8
+      "10yr_Median": 84.6
     },
     "Real GDP growth (%)": {
-      "2025": 2.7,
+      "2026": 3.2,
       "2019": 0.8,
-      "10yr_Median": 3.3
+      "10yr_Median": 3.2
     },
     "Inflation, consumer prices (%)": {
-      "2025": 35.9,
+      "2026": 22.8,
       "2019": 15.2,
-      "10yr_Median": 18.0
+      "10yr_Median": 21.2
     },
     "National savings (% of GDP)": {
-      "2025": 23.2,
+      "2026": 23.7,
       "2019": 26.4,
       "10yr_Median": 26.5
     },
     "Total investment (% of GDP)": {
-      "2025": 24.6,
+      "2026": 25.2,
       "2019": 24.9,
       "10yr_Median": 29.7
     },
     "Current account balance (% of GDP)": {
-      "2025": -1.2,
+      "2026": -1.2,
       "2019": 2.0,
-      "10yr_Median": -2.2
+      "10yr_Median": -1.5
     },
     "General government revenue (% of GDP)": {
-      "2025": 28.6,
+      "2026": 28.6,
       "2019": 30.7,
-      "10yr_Median": 29.4
+      "10yr_Median": 28.7
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 32.9,
+      "2026": 32.0,
       "2019": 35.5,
-      "10yr_Median": 33.5
+      "10yr_Median": 33.1
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -4.3,
+      "2026": -3.4,
       "2019": -4.8,
-      "10yr_Median": -3.7
+      "10yr_Median": -3.9
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -1.7,
+      "2026": -0.6,
       "2019": -3.0,
       "10yr_Median": -1.7
     },
     "General government gross debt (% of GDP)": {
-      "2025": 26.7,
+      "2026": 27.1,
       "2019": 32.4,
       "10yr_Median": 29.6
     }
   },
   "UKR": {
     "GDP (US Dollars)": {
-      "2025": 205.7,
+      "2026": 220.4,
       "2019": 153.9,
-      "10yr_Median": 159.3
+      "10yr_Median": 170.4
     },
     "Population": {
-      "2025": 32.9,
+      "2026": 33.4,
       "2019": 41.7,
-      "10yr_Median": 41.2
+      "10yr_Median": 37.8
     },
     "Real GDP growth (%)": {
-      "2025": 2.0,
+      "2026": 4.5,
       "2019": 3.2,
-      "10yr_Median": 2.8
+      "10yr_Median": 3.3
     },
     "Inflation, consumer prices (%)": {
-      "2025": 12.6,
+      "2026": 7.7,
       "2019": 7.9,
-      "10yr_Median": 11.8
+      "10yr_Median": 10.2
     },
     "National savings (% of GDP)": {
-      "2025": 2.3,
+      "2026": 9.7,
       "2019": 12.2,
-      "10yr_Median": 12.4
+      "10yr_Median": 12.2
     },
     "Total investment (% of GDP)": {
-      "2025": 18.5,
+      "2026": 20.0,
       "2019": 14.9,
       "10yr_Median": 15.8
     },
     "Current account balance (% of GDP)": {
-      "2025": -15.9,
+      "2026": -10.6,
       "2019": -2.7,
-      "10yr_Median": -2.5
+      "10yr_Median": -3.0
     },
     "General government revenue (% of GDP)": {
-      "2025": 39.1,
+      "2026": 40.0,
       "2019": 39.4,
-      "10yr_Median": 39.6
+      "10yr_Median": 39.7
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 58.0,
+      "2026": 49.7,
       "2019": 41.5,
-      "10yr_Median": 43.8
+      "10yr_Median": 47.7
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -18.8,
+      "2026": -9.7,
       "2019": -2.1,
-      "10yr_Median": -4.9
+      "10yr_Median": -7.8
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -13.2,
+      "2026": -5.6,
       "2019": 1.0,
-      "10yr_Median": -2.1
+      "10yr_Median": -4.3
     },
     "General government gross debt (% of GDP)": {
-      "2025": 110.0,
+      "2026": 108.5,
       "2019": 50.5,
       "10yr_Median": 74.7
     }
   },
   "URY": {
     "GDP (US Dollars)": {
-      "2025": 79.7,
+      "2026": 85.2,
       "2019": 62.2,
-      "10yr_Median": 65.2
+      "10yr_Median": 68.0
     },
     "Population": {
-      "2025": 3.5,
+      "2026": 3.5,
       "2019": 3.5,
       "10yr_Median": 3.5
     },
     "Real GDP growth (%)": {
-      "2025": 2.8,
+      "2026": 2.6,
       "2019": 0.9,
-      "10yr_Median": 1.7
+      "10yr_Median": 2.2
     },
     "Inflation, consumer prices (%)": {
-      "2025": 5.5,
+      "2026": 5.3,
       "2019": 7.9,
-      "10yr_Median": 7.7
+      "10yr_Median": 6.9
     },
     "National savings (% of GDP)": {
-      "2025": 13.8,
+      "2026": 13.5,
       "2019": 15.4,
-      "10yr_Median": 15.1
+      "10yr_Median": 14.7
     },
     "Total investment (% of GDP)": {
-      "2025": 15.3,
+      "2026": 15.1,
       "2019": 14.1,
-      "10yr_Median": 16.1
+      "10yr_Median": 15.8
     },
     "Current account balance (% of GDP)": {
-      "2025": -1.5,
+      "2026": -1.7,
       "2019": 1.3,
-      "10yr_Median": -0.8
+      "10yr_Median": -1.2
     },
     "General government revenue (% of GDP)": {
-      "2025": 28.2,
+      "2026": 28.2,
       "2019": 27.9,
-      "10yr_Median": 27.7
+      "10yr_Median": 27.9
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 31.2,
+      "2026": 30.9,
       "2019": 30.6,
-      "10yr_Median": 30.4
+      "10yr_Median": 30.6
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -2.9,
+      "2026": -2.7,
       "2019": -2.7,
       "10yr_Median": -2.7
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.7,
+      "2026": -0.6,
       "2019": -0.5,
       "10yr_Median": -0.6
     },
     "General government gross debt (% of GDP)": {
-      "2025": 68.5,
+      "2026": 68.3,
       "2019": 59.6,
-      "10yr_Median": 62.0
+      "10yr_Median": 64.0
     }
   },
   "ZAF": {
     "GDP (US Dollars)": {
-      "2025": 410.3,
+      "2026": 424.2,
       "2019": 389.2,
-      "10yr_Median": 394.7
+      "10yr_Median": 402.6
     },
     "Population": {
-      "2025": 64.1,
+      "2026": 65.1,
       "2019": 59.1,
-      "10yr_Median": 60.3
+      "10yr_Median": 61.0
     },
     "Real GDP growth (%)": {
-      "2025": 1.0,
+      "2026": 1.3,
       "2019": 0.3,
-      "10yr_Median": 0.8
+      "10yr_Median": 1.1
     },
     "Inflation, consumer prices (%)": {
-      "2025": 3.8,
+      "2026": 4.5,
       "2019": 4.1,
-      "10yr_Median": 4.6
+      "10yr_Median": 4.5
     },
     "National savings (% of GDP)": {
-      "2025": 12.1,
+      "2026": 12.0,
       "2019": 13.2,
-      "10yr_Median": 14.1
+      "10yr_Median": 13.6
     },
     "Total investment (% of GDP)": {
-      "2025": 13.4,
+      "2026": 13.5,
       "2019": 15.8,
-      "10yr_Median": 15.5
+      "10yr_Median": 14.7
     },
     "Current account balance (% of GDP)": {
-      "2025": -1.2,
+      "2026": -1.4,
       "2019": -2.6,
-      "10yr_Median": -1.4
+      "10yr_Median": -1.3
     },
     "General government revenue (% of GDP)": {
-      "2025": 27.5,
+      "2026": 27.5,
       "2019": 26.3,
-      "10yr_Median": 26.7
+      "10yr_Median": 27.0
     },
     "General government total expenditure (% of GDP)": {
-      "2025": 34.0,
+      "2026": 33.6,
       "2019": 31.4,
-      "10yr_Median": 32.2
+      "10yr_Median": 32.5
     },
     "General government net lending/borrowing (% of GDP)": {
-      "2025": -6.6,
+      "2026": -6.1,
       "2019": -5.1,
-      "10yr_Median": -5.3
+      "10yr_Median": -5.5
     },
     "General government net borrowing (% of GDP)": {
-      "2025": -0.9,
+      "2026": -0.3,
       "2019": -1.5,
       "10yr_Median": -0.7
     },
     "General government gross debt (% of GDP)": {
-      "2025": 79.6,
+      "2026": 81.7,
       "2019": 56.1,
-      "10yr_Median": 68.8
+      "10yr_Median": 69.9
     }
   }
 };
-        
-        // Country organization by continent
+        const currentYear = "2026";
+        const weoReleaseLabel = "April 2026";
+
         const countryData = {
           'Africa': {
-            'AGO': 'Angola',
-            'CIV': 'Côte d\'Ivoire',
-            'EGY': 'Egypt',
-            'GHA': 'Ghana',
-            'KEN': 'Kenya',
-            'MAR': 'Morocco',
-            'NGA': 'Nigeria',
-            'ZAF': 'South Africa'
+            'AGO': 'Angola', 'CIV': 'Côte d\'Ivoire', 'EGY': 'Egypt', 'GHA': 'Ghana',
+            'KEN': 'Kenya', 'MAR': 'Morocco', 'NGA': 'Nigeria', 'ZAF': 'South Africa'
           },
           'Americas': {
-            'ARG': 'Argentina',
-            'BRA': 'Brazil',
-            'CHL': 'Chile',
-            'COL': 'Colombia',
-            'CRI': 'Costa Rica',
-            'DOM': 'Dominican Republic',
-            'ECU': 'Ecuador',
-            'GTM': 'Guatemala',
-            'JAM': 'Jamaica',
-            'MEX': 'Mexico',
-            'PAN': 'Panama',
-            'PER': 'Peru',
-            'URY': 'Uruguay'
+            'ARG': 'Argentina', 'BRA': 'Brazil', 'CHL': 'Chile', 'COL': 'Colombia',
+            'CRI': 'Costa Rica', 'DOM': 'Dominican Republic', 'ECU': 'Ecuador', 'GTM': 'Guatemala',
+            'JAM': 'Jamaica', 'MEX': 'Mexico', 'PAN': 'Panama', 'PER': 'Peru', 'URY': 'Uruguay'
           },
           'Asia': {
-            'BHR': 'Bahrain',
-            'CHN': 'China',
-            'JOR': 'Jordan',
-            'KAZ': 'Kazakhstan',
-            'MYS': 'Malaysia',
-            'OMN': 'Oman',
-            'PAK': 'Pakistan',
-            'PHL': 'Philippines',
-            'SAU': 'Saudi Arabia',
-            'LKA': 'Sri Lanka',
-            'ARE': 'United Arab Emirates'
+            'BHR': 'Bahrain', 'CHN': 'China', 'JOR': 'Jordan', 'KAZ': 'Kazakhstan',
+            'MYS': 'Malaysia', 'OMN': 'Oman', 'PAK': 'Pakistan', 'PHL': 'Philippines',
+            'SAU': 'Saudi Arabia', 'LKA': 'Sri Lanka', 'ARE': 'United Arab Emirates'
           },
           'Europe': {
-            'BGR': 'Bulgaria',
-            'HUN': 'Hungary',
-            'LVA': 'Latvia',
-            'POL': 'Poland',
-            'ROU': 'Romania',
-            'SRB': 'Serbia',
-            'TUR': 'Turkey',
-            'UKR': 'Ukraine'
+            'BGR': 'Bulgaria', 'HUN': 'Hungary', 'LVA': 'Latvia', 'POL': 'Poland',
+            'ROU': 'Romania', 'SRB': 'Serbia', 'TUR': 'Turkey', 'UKR': 'Ukraine'
           }
         };
 
@@ -2581,7 +2551,7 @@
           }
 
           const getChangeIndicator = (current, previous) => {
-            if (!current || !previous) return null;
+            if (current == null || previous == null) return null;
             const change = current - previous;
             if (Math.abs(change) < 0.1) return null;
             return change > 0 ? <TrendingUp /> : <TrendingDown />;
@@ -2591,8 +2561,8 @@
             <div className="grid grid-cols-4 gap-4 py-3 border-b border-gray-100 hover:bg-gray-50">
               <div className="col-span-1 font-medium text-gray-700 text-sm">{label}</div>
               <div className="text-right font-semibold text-blue-900">
-                {data['2025']?.toFixed(1) ?? 'N/A'}
-                {getChangeIndicator(data['2025'], data['2019'])}
+                {data[currentYear]?.toFixed(1) ?? 'N/A'}
+                {getChangeIndicator(data[currentYear], data['2019'])}
               </div>
               <div className="text-right text-gray-600">{data['10yr_Median']?.toFixed(1) ?? 'N/A'}</div>
               <div className="text-right text-gray-600">{data['2019']?.toFixed(1) ?? 'N/A'}</div>
@@ -2613,7 +2583,7 @@
 
               <div className="grid grid-cols-4 gap-4 mb-2 pb-2 border-b-2 border-gray-300">
                 <div className="col-span-1 font-bold text-gray-700">Indicator</div>
-                <div className="text-right font-bold text-blue-900">2025</div>
+                <div className="text-right font-bold text-blue-900">{currentYear}</div>
                 <div className="text-right font-bold text-gray-700">10yr Median</div>
                 <div className="text-right font-bold text-gray-700">2019</div>
               </div>
@@ -2625,7 +2595,7 @@
               </div>
 
               <div className="mt-6 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
-                Source: IMF World Economic Outlook Database
+                Source: IMF World Economic Outlook Database · {weoReleaseLabel} WEO
               </div>
             </div>
           );
@@ -2635,14 +2605,8 @@
           const [selectedCountry, setSelectedCountry] = useState(null);
           const [selectedContinent, setSelectedContinent] = useState('All');
 
-          const handleCountryClick = (code, name) => {
-            setSelectedCountry({ code, name });
-          };
-
-          const handleBack = () => {
-            setSelectedCountry(null);
-          };
-
+          const handleCountryClick = (code, name) => setSelectedCountry({ code, name });
+          const handleBack = () => setSelectedCountry(null);
           const continents = ['All', ...Object.keys(countryData)];
 
           const getFilteredCountries = () => {
@@ -2652,19 +2616,14 @@
               );
             }
             return Object.entries(countryData[selectedContinent] || {}).map(([code, name]) => ({
-              code,
-              name,
-              continent: selectedContinent
+              code, name, continent: selectedContinent
             }));
           };
 
           if (selectedCountry) {
             return (
               <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 p-8">
-                <button
-                  onClick={handleBack}
-                  className="mb-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
+                <button onClick={handleBack} className="mb-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                   ← Back to Countries
                 </button>
                 <CountryCard
@@ -2679,12 +2638,15 @@
           return (
             <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 p-8">
               <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-8">
+                <div className="text-center mb-3">
                   <h1 className="text-4xl font-bold text-gray-800 mb-2">Emerging Markets Dashboard</h1>
-                  <p className="text-gray-600">Select a country to view economic indicators</p>
+                  <p className="text-gray-600 mb-1">Select a country to view economic indicators</p>
+                  <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+                    Data: IMF {weoReleaseLabel} WEO
+                  </span>
                 </div>
 
-                <div className="flex justify-center gap-2 mb-8 flex-wrap">
+                <div className="flex justify-center gap-2 mb-8 flex-wrap mt-4">
                   {continents.map(continent => (
                     <button
                       key={continent}
@@ -2709,9 +2671,7 @@
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition">
-                            {name}
-                          </h3>
+                          <h3 className="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition">{name}</h3>
                           <p className="text-sm text-gray-500">{code}</p>
                         </div>
                         <Globe className="w-6 h-6 text-blue-400" />
