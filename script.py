@@ -312,10 +312,11 @@ def get_year_data(series_data, target_year):
 print("\nCollecting data for variables...")
 for var in var_dict.keys():
     try:
-        # Only keep columns that are in our target list
+        # Only keep columns that are in our target list; ffill so countries
+        # with a reporting lag get their last known value for the current year
         all_series = w.getc(var)
         available = [c for c in target_countries if c in all_series.columns]
-        series_data = all_series[available]
+        series_data = all_series[available].ffill()
 
         current_values, used_year = get_year_data(series_data, current_year)
         current_year_data[var] = current_values
