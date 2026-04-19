@@ -970,39 +970,38 @@ html_template = """<!DOCTYPE html>
             .filter(c => c.x !== null && c.y !== null),
           [xInd, xPeriod, yInd, yPeriod]);
 
-          const [xMin, xMax, yMin, yMax] = useMemo(() => {
-            if (!points.length) return [0, 1, 0, 1];
-            const xs = points.map(p => p.x), ys = points.map(p => p.y);
-            const xPad = (Math.max(...xs) - Math.min(...xs)) * 0.05 || 1;
-            const yPad = (Math.max(...ys) - Math.min(...ys)) * 0.05 || 1;
-            return [Math.min(...xs) - xPad, Math.max(...xs) + xPad,
-                    Math.min(...ys) - yPad, Math.max(...ys) + yPad];
-          }, [points]);
-
-          const sx = v => PAD.l + (v - xMin) / (xMax - xMin) * iW;
-          const sy = v => PAD.t + (1 - (v - yMin) / (yMax - yMin)) * iH;
-
           const fmt = v => {
             const a = Math.abs(v);
             if (a >= 1e6) return `${(v/1e6).toFixed(1)}M`;
             if (a >= 1e3) return `${(v/1e3).toFixed(0)}k`;
+            if (a >= 10)  return v.toFixed(0);
             return v.toFixed(1);
           };
 
-          const makeTicks = (min, max, n = 5) => {
-            const range = max - min || 1;
-            const raw = range / n;
-            const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-            const step = Math.ceil(raw / mag) * mag || 1;
-            const start = Math.floor(min / step) * step;
+          // Compute nice ticks first; domain derives from tick extent for clean alignment
+          const niceTicks = (rawMin, rawMax, n = 6) => {
+            const range = rawMax - rawMin || 1;
+            const rough = range / n;
+            const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+            const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= rough) || rough;
+            const start = Math.floor(rawMin / step) * step;
+            const end   = Math.ceil(rawMax  / step) * step;
             const ticks = [];
-            for (let t = start; t <= max + step * 0.5; t += step)
-              if (t >= min - step * 0.1) ticks.push(parseFloat(t.toFixed(10)));
+            for (let t = start; t <= end + step * 0.001; t = parseFloat((t + step).toFixed(12)))
+              ticks.push(parseFloat(t.toFixed(12)));
             return ticks;
           };
 
-          const xTicks = useMemo(() => makeTicks(xMin, xMax), [xMin, xMax]);
-          const yTicks = useMemo(() => makeTicks(yMin, yMax), [yMin, yMax]);
+          const [xTicks, yTicks, xMin, xMax, yMin, yMax] = useMemo(() => {
+            if (!points.length) return [[], [], 0, 1, 0, 1];
+            const xs = points.map(p => p.x), ys = points.map(p => p.y);
+            const xt = niceTicks(Math.min(...xs), Math.max(...xs));
+            const yt = niceTicks(Math.min(...ys), Math.max(...ys));
+            return [xt, yt, xt[0], xt[xt.length-1], yt[0], yt[yt.length-1]];
+          }, [points]);
+
+          const sx = v => PAD.l + (v - xMin) / (xMax - xMin) * iW;
+          const sy = v => PAD.t + (1 - (v - yMin) / (yMax - yMin)) * iH;
 
           const getColor = p => colorMode === 'rating'
             ? (ratingColors[p.bucket] ?? '#9ca3af')
