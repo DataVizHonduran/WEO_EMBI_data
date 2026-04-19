@@ -1165,6 +1165,8 @@ html_template = """<!DOCTYPE html>
           const [hidden, setHidden] = useState(new Set());
           const [trimOutliers, setTrimOutliers] = useState(false);
           const [showRegression, setShowRegression] = useState(false);
+          const [showCorrMatrix, setShowCorrMatrix] = useState(false);
+          const [corrPeriod, setCorrPeriod] = useState(currentYear);
           const [highlightCode, setHighlightCode] = useState('');
           const [tooltip, setTooltip] = useState(null);
           const chartRef = useRef(null);
@@ -1240,6 +1242,41 @@ html_template = """<!DOCTYPE html>
             const r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
             return { slope, intercept, r2 };
           }, [visiblePoints, showRegression]);
+
+          const corrMatrix = useMemo(() => {
+            const result = {};
+            for (let i = 0; i < indicators.length; i++) {
+              for (let j = i; j < indicators.length; j++) {
+                const a = indicators[i], b = indicators[j];
+                const pairs = allCountriesFlat
+                  .map(c => [countryMetrics[c.code]?.[a]?.[corrPeriod], countryMetrics[c.code]?.[b]?.[corrPeriod]])
+                  .filter(([x, y]) => x != null && y != null);
+                const n = pairs.length;
+                if (n < 5) { result[`${i}|${j}`] = result[`${j}|${i}`] = null; continue; }
+                const mx = pairs.reduce((s, [x]) => s + x, 0) / n;
+                const my = pairs.reduce((s, [, y]) => s + y, 0) / n;
+                const num = pairs.reduce((s, [x, y]) => s + (x - mx) * (y - my), 0);
+                const den = Math.sqrt(
+                  pairs.reduce((s, [x]) => s + (x - mx) ** 2, 0) *
+                  pairs.reduce((s, [, y]) => s + (y - my) ** 2, 0)
+                );
+                const r = den < 1e-10 ? 0 : num / den;
+                result[`${i}|${j}`] = result[`${j}|${i}`] = { r, n };
+              }
+            }
+            return result;
+          }, [corrPeriod]);
+
+          const corrColor = r => {
+            if (r === null) return '#f3f4f6';
+            const t = (r + 1) / 2;
+            if (t <= 0.5) {
+              const s = t * 2;
+              return `rgb(${Math.round(220+35*s)},${Math.round(38+217*s)},${Math.round(38+217*s)})`;
+            }
+            const s = (t - 0.5) * 2;
+            return `rgb(${Math.round(255-218*s)},${Math.round(255-156*s)},${Math.round(255-20*s)})`;
+          };
 
           const [szLogMin, szLogMax] = useMemo(() => {
             const vals = visiblePoints.map(p => p.sz).filter(v => v != null && v > 0);
@@ -1349,6 +1386,15 @@ html_template = """<!DOCTYPE html>
                           showRegression ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-violet-50'
                         }`}>
                         {showRegression ? '✓ OLS line' : 'Add OLS line'}
+                      </button>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Corr. Matrix</label>
+                      <button onClick={() => setShowCorrMatrix(v => !v)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
+                          showCorrMatrix ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-teal-50'
+                        }`}>
+                        {showCorrMatrix ? '✓ Show matrix' : 'Corr. Matrix'}
                       </button>
                     </div>
                   </div>
@@ -1461,6 +1507,91 @@ html_template = """<!DOCTYPE html>
                   {normalPts.length + (hlPt ? 1 : 0)} of {points.length} countries shown · Source: IMF {weoReleaseLabel} WEO
                 </p>
               </div>
+
+              {showCorrMatrix && (() => {
+                const shortLbl = s => s.replace(/\s*\(.*?\)/g, '').replace(/,.*$/, '').trim().slice(0, 20);
+                const CELL = 22;
+                const ROW_W = 165;
+                return (
+                  <div className="bg-white rounded-xl shadow p-5 mt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-bold text-gray-700">
+                        Pearson Correlation Matrix — {allCountriesFlat.length} countries
+                      </h3>
+                      <div className="flex gap-1">
+                        {periods.map(p => (
+                          <button key={p.key} onClick={() => setCorrPeriod(p.key)}
+                            className={`px-2 py-0.5 rounded text-xs font-medium transition ${
+                              corrPeriod === p.key ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-teal-50'
+                            }`}>{p.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="text-xs border-collapse" style={{tableLayout:'fixed'}}>
+                        <thead>
+                          <tr>
+                            <th style={{width:ROW_W, minWidth:ROW_W}}></th>
+                            {indicators.map((ind, j) => (
+                              <th key={j} style={{width:CELL, minWidth:CELL, height:110, verticalAlign:'bottom', padding:0}}>
+                                <div style={{
+                                  transform:'rotate(-60deg) translateX(-6px)', transformOrigin:'bottom left',
+                                  whiteSpace:'nowrap', fontSize:10, color:'#4b5563', fontWeight:500, lineHeight:1.2
+                                }}>{shortLbl(ind)}</div>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {indicators.map((indRow, i) => (
+                            <tr key={i}>
+                              <td style={{
+                                fontSize:10, color:'#4b5563', paddingRight:6, textAlign:'right',
+                                whiteSpace:'nowrap', width:ROW_W, maxWidth:ROW_W,
+                                overflow:'hidden', textOverflow:'ellipsis', fontWeight:500
+                              }}>{shortLbl(indRow)}</td>
+                              {indicators.map((indCol, j) => {
+                                const cell = corrMatrix[`${i}|${j}`];
+                                const r = cell?.r ?? null;
+                                const isDiag = i === j;
+                                const bg = isDiag ? '#1e40af' : corrColor(r);
+                                const light = r === null || (!isDiag && Math.abs(r) < 0.4);
+                                const textCol = light ? '#374151' : '#fff';
+                                const display = isDiag ? '' : (r !== null ? r.toFixed(2) : '');
+                                const ttip = isDiag
+                                  ? indRow
+                                  : `${shortLbl(indRow)} × ${shortLbl(indCol)}\nr = ${r?.toFixed(3) ?? 'N/A'} (n=${cell?.n ?? 0})`;
+                                return (
+                                  <td key={j} title={ttip}
+                                    onClick={() => { if (!isDiag && r !== null) { setXInd(indCol); setYInd(indRow); } }}
+                                    style={{
+                                      width:CELL, minWidth:CELL, height:CELL, background:bg,
+                                      color:textCol, fontSize:7, textAlign:'center', verticalAlign:'middle',
+                                      border:'1px solid rgba(255,255,255,0.4)',
+                                      cursor: isDiag ? 'default' : 'pointer',
+                                    }}>{display}</td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-6 mt-3 text-xs text-gray-400">
+                      <span>Click cell → sets Graph X/Y axes</span>
+                      <div className="flex items-center gap-1.5">
+                        <span>−1</span>
+                        <div style={{
+                          width:80, height:10, borderRadius:3,
+                          background:'linear-gradient(to right, rgb(220,38,38), white, rgb(37,99,235))'
+                        }}/>
+                        <span>+1</span>
+                      </div>
+                      <span>Grey = fewer than 5 observations</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           );
         };
